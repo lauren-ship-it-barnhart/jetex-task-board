@@ -18,6 +18,7 @@
     --red: #f87171;
     --orange: #fb923c;
     --purple: #a78bfa;
+    --cyan: #60d5fa;
   }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
@@ -40,13 +41,45 @@
     letter-spacing: -0.5px;
   }
   header h1 span { color: var(--accent); }
+  .header-right { text-align: right; }
   #clock {
     font-size: 14px;
     color: var(--muted);
-    text-align: right;
     line-height: 1.5;
   }
   #clock .time { font-size: 20px; color: var(--text); font-weight: 500; }
+  #sessions-bar {
+    margin-top: 6px;
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+  .session-badge {
+    font-size: 10px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    background: #1a2a3a;
+    color: var(--cyan);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .session-badge .pulse {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  #sync-status {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
 
   .stats {
     display: flex;
@@ -205,6 +238,7 @@
   .tag-ai { background: #2a2a1a; color: var(--yellow); }
   .tag-mx { background: #3a1a1a; color: var(--red); }
   .tag-general { background: #2a2d3a; color: var(--muted); }
+  .tag-claude { background: #1a2a3a; color: var(--cyan); }
   .tag-date {
     font-size: 10px;
     color: var(--muted);
@@ -228,7 +262,11 @@
 
 <header>
   <h1><span>JetEx</span> Task Board</h1>
-  <div id="clock"></div>
+  <div class="header-right">
+    <div id="clock"></div>
+    <div id="sessions-bar"></div>
+    <div id="sync-status"></div>
+  </div>
 </header>
 
 <div class="stats">
@@ -271,44 +309,142 @@
 </div>
 
 <script>
+// ========== CONFIG ==========
+const SHEET_ID = '170TEmIyh5wEcY_oGbo6CEzLrYQds-tNcLqW_E-L2PE4';
+const TASKS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Tasks`;
+const SESSIONS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sessions`;
+// Apps Script web app URL — set after deploying the script
+const APPS_SCRIPT_URL = ''; // TODO: paste your deployed Apps Script URL here
+const POLL_INTERVAL = 5000; // 5 seconds
 const STORAGE_KEY = 'jetex-tasks';
 
+// ========== CSV PARSING ==========
+function parseCSV(csv) {
+  const lines = csv.split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const headers = parseCSVLine(lines[0]);
+  return lines.slice(1).map(line => {
+    const vals = parseCSVLine(line);
+    const obj = {};
+    headers.forEach((h, i) => obj[h.replace(/^"|"$/g, '').trim()] = (vals[i] || '').replace(/^"|"$/g, ''));
+    return obj;
+  });
+}
+
+function parseCSVLine(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current); current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+// ========== DATA LAYER ==========
+let cachedTasks = [];
+
+async function fetchTasksFromSheet() {
+  try {
+    const res = await fetch(TASKS_CSV + '&_t=' + Date.now()); // cache-bust
+    if (!res.ok) throw new Error('Fetch failed');
+    const csv = await res.text();
+    const rows = parseCSV(csv);
+    cachedTasks = rows.map(r => ({
+      id: r.id || '',
+      text: r.text || '',
+      category: r.category || 'general',
+      status: r.status || 'open',
+      source: r.source || 'manual',
+      session_id: r.session_id || '',
+      created: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
+      completedAt: r.completed_at ? new Date(r.completed_at).getTime() : null,
+    }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedTasks));
+    updateSyncStatus('Synced');
+    return cachedTasks;
+  } catch (e) {
+    updateSyncStatus('Offline — using cache');
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { return []; }
+  }
+}
+
+async function fetchSessions() {
+  try {
+    const res = await fetch(SESSIONS_CSV + '&_t=' + Date.now());
+    if (!res.ok) return [];
+    const csv = await res.text();
+    const rows = parseCSV(csv);
+    // Only show sessions active in last 30 minutes
+    const cutoff = Date.now() - 30 * 60 * 1000;
+    return rows.filter(r => {
+      if (r.status !== 'active') return false;
+      const lastSeen = new Date(r.last_seen).getTime();
+      return lastSeen > cutoff;
+    });
+  } catch { return []; }
+}
+
 function loadTasks() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-  catch { return []; }
+  return cachedTasks.length ? cachedTasks : (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
 }
 
-function saveTasks(tasks) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+// ========== WRITE VIA APPS SCRIPT ==========
+async function writeToSheet(action, data) {
+  if (!APPS_SCRIPT_URL) {
+    // Fallback: localStorage only
+    return false;
+  }
+  try {
+    await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action, ...data }),
+    });
+    return true;
+  } catch { return false; }
 }
 
-function formatDate(ts) {
-  const d = new Date(ts);
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-
-function addTask() {
+// ========== TASK ACTIONS ==========
+async function addTask() {
   const input = document.getElementById('taskInput');
   const text = input.value.trim();
   if (!text) return;
 
-  const tasks = loadTasks();
-  tasks.push({
-    id: Date.now(),
+  const task = {
+    id: Date.now().toString(),
     text,
     category: document.getElementById('categorySelect').value,
     status: document.getElementById('prioritySelect').value,
+    source: 'manual',
+    session_id: '',
     created: Date.now(),
-    completedAt: null
-  });
-  saveTasks(tasks);
+    completedAt: null,
+  };
+
+  // Optimistic local update
+  cachedTasks.push(task);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedTasks));
   input.value = '';
   render();
+
+  // Write to sheet
+  await writeToSheet('add', task);
 }
 
-function toggleDone(id) {
-  const tasks = loadTasks();
-  const t = tasks.find(t => t.id === id);
+async function toggleDone(id) {
+  const t = cachedTasks.find(t => String(t.id) === String(id));
   if (!t) return;
   if (t.status === 'done') {
     t.status = 'open';
@@ -317,39 +453,49 @@ function toggleDone(id) {
     t.status = 'done';
     t.completedAt = Date.now();
   }
-  saveTasks(tasks);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedTasks));
   render();
+  await writeToSheet('update', { id: String(id), status: t.status });
 }
 
-function toggleUrgent(id) {
-  const tasks = loadTasks();
-  const t = tasks.find(t => t.id === id);
+async function toggleUrgent(id) {
+  const t = cachedTasks.find(t => String(t.id) === String(id));
   if (!t) return;
   t.status = t.status === 'urgent' ? 'open' : 'urgent';
-  saveTasks(tasks);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedTasks));
   render();
+  await writeToSheet('update', { id: String(id), status: t.status });
 }
 
-function deleteTask(id) {
-  const tasks = loadTasks().filter(t => t.id !== id);
-  saveTasks(tasks);
+async function deleteTask(id) {
+  cachedTasks = cachedTasks.filter(t => String(t.id) !== String(id));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedTasks));
   render();
+  await writeToSheet('delete', { id: String(id) });
+}
+
+// ========== RENDERING ==========
+function formatDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function renderTask(task) {
   const isDone = task.status === 'done';
+  const idStr = JSON.stringify(String(task.id));
   return `
     <div class="task ${isDone ? 'completed' : ''}">
       <div class="task-top">
         <div class="task-text">${escHtml(task.text)}</div>
         <div class="task-actions">
-          ${!isDone ? `<button class="btn-urgent" onclick="toggleUrgent(${task.id})" title="${task.status === 'urgent' ? 'Set normal' : 'Mark urgent'}">!!</button>` : ''}
-          <button class="btn-done" onclick="toggleDone(${task.id})" title="${isDone ? 'Reopen' : 'Complete'}">${isDone ? '&#8634;' : '&#10003;'}</button>
-          <button class="btn-delete" onclick="deleteTask(${task.id})" title="Delete">&times;</button>
+          ${!isDone ? `<button class="btn-urgent" onclick="toggleUrgent(${idStr})" title="${task.status === 'urgent' ? 'Set normal' : 'Mark urgent'}">!!</button>` : ''}
+          <button class="btn-done" onclick="toggleDone(${idStr})" title="${isDone ? 'Reopen' : 'Complete'}">${isDone ? '&#8634;' : '&#10003;'}</button>
+          <button class="btn-delete" onclick="deleteTask(${idStr})" title="Delete">&times;</button>
         </div>
       </div>
       <div class="task-meta">
         <span class="tag tag-${task.category}">${task.category}</span>
+        ${task.source === 'claude-code' ? '<span class="tag tag-claude">Claude</span>' : ''}
         <span class="tag-date">${formatDate(task.created)}</span>
       </div>
     </div>`;
@@ -371,7 +517,7 @@ function render() {
 
   document.getElementById('list-urgent').innerHTML = urgent.length ? urgent.map(renderTask).join('') : '<div class="empty">No urgent tasks</div>';
   document.getElementById('list-open').innerHTML = open.length ? open.map(renderTask).join('') : '<div class="empty">All clear</div>';
-  document.getElementById('list-done').innerHTML = done.length ? done.sort((a,b) => b.completedAt - a.completedAt).map(renderTask).join('') : '<div class="empty">Nothing completed yet</div>';
+  document.getElementById('list-done').innerHTML = done.length ? done.sort((a,b) => (b.completedAt||0) - (a.completedAt||0)).map(renderTask).join('') : '<div class="empty">Nothing completed yet</div>';
 
   document.getElementById('stat-urgent').textContent = urgent.length;
   document.getElementById('stat-open').textContent = open.length;
@@ -381,6 +527,22 @@ function render() {
   document.getElementById('count-done').textContent = done.length;
 }
 
+function renderSessions(sessions) {
+  const bar = document.getElementById('sessions-bar');
+  if (!sessions.length) {
+    bar.innerHTML = '';
+    return;
+  }
+  bar.innerHTML = sessions.map(s =>
+    `<div class="session-badge"><span class="pulse"></span>${escHtml(s.project || 'Claude')} (${s.task_count || 0} tasks)</div>`
+  ).join('');
+}
+
+function updateSyncStatus(msg) {
+  const el = document.getElementById('sync-status');
+  if (el) el.textContent = msg;
+}
+
 function updateClock() {
   const now = new Date();
   const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -388,63 +550,26 @@ function updateClock() {
   document.getElementById('clock').innerHTML = `<div class="time">${time}</div>${date}`;
 }
 
+// ========== POLLING LOOP ==========
+async function poll() {
+  await fetchTasksFromSheet();
+  const sessions = await fetchSessions();
+  render();
+  renderSessions(sessions);
+}
+
 document.getElementById('taskInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') addTask();
 });
 
-// Auto-clear completed tasks older than 3 days
-function cleanOldDone() {
-  const tasks = loadTasks();
-  const cutoff = Date.now() - (3 * 24 * 60 * 60 * 1000);
-  const filtered = tasks.filter(t => t.status !== 'done' || (t.completedAt && t.completedAt > cutoff));
-  if (filtered.length !== tasks.length) saveTasks(filtered);
-}
-
-// Seed default tasks on first visit (no localStorage yet)
-const DEFAULT_TASKS = [
-  // URGENT
-  { id: 1, text: "Review resumes: Kelly Hayes, Robin Jones, Janessa Baldina", category: "hr", status: "urgent", created: 1742601600000, completedAt: null },
-  { id: 2, text: "Schedule final interviews for top HR candidates", category: "hr", status: "urgent", created: 1742601600000, completedAt: null },
-  { id: 3, text: "Build McQueen's HR/Recruiting bot (EVP of MX search)", category: "ai", status: "urgent", created: 1742601600000, completedAt: null },
-  { id: 4, text: "Rename Charlie → WILCO across all UI, branding, deployment", category: "ai", status: "urgent", created: 1742601600000, completedAt: null },
-  { id: 5, text: "Add JWT auth to WILCO before sharing with MX team", category: "ai", status: "urgent", created: 1742601600000, completedAt: null },
-  { id: 6, text: "Announce AI Tools Registry at L10 (week of 3/24)", category: "ai", status: "urgent", created: 1742601600000, completedAt: null },
-  // SALES
-  { id: 10, text: "Test pricing calculator with sample routes (Zach + Aaron)", category: "sales", status: "open", created: 1742601600000, completedAt: null },
-  { id: 11, text: "Test HubSpot post-trip survey automation trigger flow", category: "sales", status: "open", created: 1742601600000, completedAt: null },
-  // OPS
-  { id: 20, text: "Coordinate office move timeline and IT setup", category: "ops", status: "open", created: 1742601600000, completedAt: null },
-  { id: 21, text: "Finalize crew scheduling bid system rules with Andy", category: "ops", status: "open", created: 1742601600000, completedAt: null },
-  // FINANCE
-  { id: 30, text: "Compare Q4 AR reports: Jet Insight vs Intacct", category: "finance", status: "open", created: 1742601600000, completedAt: null },
-  { id: 31, text: "Confirm Q2 EOS rocks with leadership team", category: "finance", status: "open", created: 1742601600000, completedAt: null },
-  // MX
-  { id: 40, text: "Track N808GG upper cap repair ($225K estimate)", category: "mx", status: "open", created: 1742601600000, completedAt: null },
-  { id: 41, text: "Follow up on N399LF seat repair in Santa Fe", category: "mx", status: "open", created: 1742601600000, completedAt: null },
-  { id: 42, text: "Upload 7 BellAir training videos to WILCO (replace placeholders)", category: "mx", status: "open", created: 1742601600000, completedAt: null },
-  { id: 43, text: "Ingest remaining ~70 PDFs from HyperCard into WILCO", category: "mx", status: "open", created: 1742601600000, completedAt: null },
-  // AI/TECH
-  { id: 50, text: "Build OpenAI Realtime API voice mode for WILCO (hands-free)", category: "ai", status: "open", created: 1742601600000, completedAt: null },
-  { id: 51, text: "Implement hybrid search + reranking in WILCO", category: "ai", status: "open", created: 1742601600000, completedAt: null },
-  { id: 52, text: "Begin backend data pipeline for Dashboard 1", category: "ai", status: "open", created: 1742601600000, completedAt: null },
-  { id: 53, text: "Build session-status skill for Claude Code", category: "ai", status: "open", created: 1742601600000, completedAt: null },
-  { id: 54, text: "Evaluate Ninety.io + Zapier connector for scorecard sync", category: "ai", status: "open", created: 1742601600000, completedAt: null },
-  // AI TOOLS REGISTRY
-  { id: 60, text: "Lock AI Tools Registry competition mechanic & window", category: "ai", status: "open", created: 1742601600000, completedAt: null },
-  { id: 61, text: "Create tools-registry repo in JetExcellence GitHub org", category: "ai", status: "open", created: 1742601600000, completedAt: null },
-  { id: 62, text: "Draft README template for AI tools submissions", category: "ai", status: "open", created: 1742601600000, completedAt: null },
-  // INTRANET / HR
-  { id: 70, text: "Evaluate intranet platform: Next.js vs Notion vs custom", category: "ai", status: "open", created: 1742601600000, completedAt: null },
-  { id: 80, text: "Confirm LinkedIn Recruiter subscription tier for Fabiana", category: "hr", status: "open", created: 1742601600000, completedAt: null },
-];
-
-if (!localStorage.getItem(STORAGE_KEY)) {
-  saveTasks(DEFAULT_TASKS);
-}
-
-cleanOldDone();
+// Initial load from localStorage while first fetch happens
+cachedTasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
 render();
 updateClock();
+
+// Start polling
+poll();
+setInterval(poll, POLL_INTERVAL);
 setInterval(updateClock, 30000);
 </script>
 </body>
