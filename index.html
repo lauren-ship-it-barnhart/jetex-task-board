@@ -314,7 +314,7 @@ const SHEET_ID = '170TEmIyh5wEcY_oGbo6CEzLrYQds-tNcLqW_E-L2PE4';
 const TASKS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Tasks`;
 const SESSIONS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sessions`;
 // Apps Script web app URL — set after deploying the script
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxx0JhhCq_7gk9LvVRxSK57idWPcfAPahn3yh19kJaRlY88w6-I7QNEZpdhQb6LeOOqbA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyx88OPYpSLy-rdvpHhZJRKS9jxrOudgmtO4hYMNkjSD2cAkJN6s8AMzn7nbLMaqlSz6Q/exec';
 const POLL_INTERVAL = 5000; // 5 seconds
 const STORAGE_KEY = 'jetex-tasks';
 
@@ -401,19 +401,22 @@ function loadTasks() {
 
 // ========== WRITE VIA APPS SCRIPT ==========
 async function writeToSheet(action, data) {
-  if (!APPS_SCRIPT_URL) {
-    // Fallback: localStorage only
-    return false;
-  }
+  if (!APPS_SCRIPT_URL) return false;
   try {
+    // Use no-cors POST — Apps Script will process it even though we can't read the response
+    const payload = JSON.stringify({ action, ...data });
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action, ...data }),
+      body: payload,
     });
+    // Re-fetch from sheet after a short delay to confirm the change
+    setTimeout(() => poll(), 1500);
     return true;
-  } catch { return false; }
+  } catch(e) {
+    console.error('Write failed:', e);
+    return false;
+  }
 }
 
 // ========== TASK ACTIONS ==========
@@ -446,16 +449,12 @@ async function addTask() {
 async function toggleDone(id) {
   const t = cachedTasks.find(t => String(t.id) === String(id));
   if (!t) return;
-  if (t.status === 'done') {
-    t.status = 'open';
-    t.completedAt = null;
-  } else {
-    t.status = 'done';
-    t.completedAt = Date.now();
-  }
+  const action = t.status === 'done' ? 'reopen' : 'complete';
+  t.status = t.status === 'done' ? 'open' : 'done';
+  t.completedAt = t.status === 'done' ? Date.now() : null;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedTasks));
   render();
-  await writeToSheet('update', { id: String(id), status: t.status });
+  await writeToSheet(action, { id: String(id) });
 }
 
 async function toggleUrgent(id) {
@@ -464,7 +463,7 @@ async function toggleUrgent(id) {
   t.status = t.status === 'urgent' ? 'open' : 'urgent';
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedTasks));
   render();
-  await writeToSheet('update', { id: String(id), status: t.status });
+  await writeToSheet('urgent', { id: String(id) });
 }
 
 async function deleteTask(id) {
