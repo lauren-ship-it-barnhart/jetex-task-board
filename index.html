@@ -400,6 +400,48 @@ function cleanOldDone() {
   if (filtered.length !== tasks.length) saveTasks(filtered);
 }
 
+// Seed default tasks on first visit (no localStorage yet)
+const DEFAULT_TASKS = [
+  // URGENT
+  { id: 1, text: "Review resumes: Kelly Hayes, Robin Jones, Janessa Baldina", category: "hr", status: "urgent", created: 1742601600000, completedAt: null },
+  { id: 2, text: "Schedule final interviews for top HR candidates", category: "hr", status: "urgent", created: 1742601600000, completedAt: null },
+  { id: 3, text: "Build McQueen's HR/Recruiting bot (EVP of MX search)", category: "ai", status: "urgent", created: 1742601600000, completedAt: null },
+  { id: 4, text: "Rename Charlie → WILCO across all UI, branding, deployment", category: "ai", status: "urgent", created: 1742601600000, completedAt: null },
+  { id: 5, text: "Add JWT auth to WILCO before sharing with MX team", category: "ai", status: "urgent", created: 1742601600000, completedAt: null },
+  { id: 6, text: "Announce AI Tools Registry at L10 (week of 3/24)", category: "ai", status: "urgent", created: 1742601600000, completedAt: null },
+  // SALES
+  { id: 10, text: "Test pricing calculator with sample routes (Zach + Aaron)", category: "sales", status: "open", created: 1742601600000, completedAt: null },
+  { id: 11, text: "Test HubSpot post-trip survey automation trigger flow", category: "sales", status: "open", created: 1742601600000, completedAt: null },
+  // OPS
+  { id: 20, text: "Coordinate office move timeline and IT setup", category: "ops", status: "open", created: 1742601600000, completedAt: null },
+  { id: 21, text: "Finalize crew scheduling bid system rules with Andy", category: "ops", status: "open", created: 1742601600000, completedAt: null },
+  // FINANCE
+  { id: 30, text: "Compare Q4 AR reports: Jet Insight vs Intacct", category: "finance", status: "open", created: 1742601600000, completedAt: null },
+  { id: 31, text: "Confirm Q2 EOS rocks with leadership team", category: "finance", status: "open", created: 1742601600000, completedAt: null },
+  // MX
+  { id: 40, text: "Track N808GG upper cap repair ($225K estimate)", category: "mx", status: "open", created: 1742601600000, completedAt: null },
+  { id: 41, text: "Follow up on N399LF seat repair in Santa Fe", category: "mx", status: "open", created: 1742601600000, completedAt: null },
+  { id: 42, text: "Upload 7 BellAir training videos to WILCO (replace placeholders)", category: "mx", status: "open", created: 1742601600000, completedAt: null },
+  { id: 43, text: "Ingest remaining ~70 PDFs from HyperCard into WILCO", category: "mx", status: "open", created: 1742601600000, completedAt: null },
+  // AI/TECH
+  { id: 50, text: "Build OpenAI Realtime API voice mode for WILCO (hands-free)", category: "ai", status: "open", created: 1742601600000, completedAt: null },
+  { id: 51, text: "Implement hybrid search + reranking in WILCO", category: "ai", status: "open", created: 1742601600000, completedAt: null },
+  { id: 52, text: "Begin backend data pipeline for Dashboard 1", category: "ai", status: "open", created: 1742601600000, completedAt: null },
+  { id: 53, text: "Build session-status skill for Claude Code", category: "ai", status: "open", created: 1742601600000, completedAt: null },
+  { id: 54, text: "Evaluate Ninety.io + Zapier connector for scorecard sync", category: "ai", status: "open", created: 1742601600000, completedAt: null },
+  // AI TOOLS REGISTRY
+  { id: 60, text: "Lock AI Tools Registry competition mechanic & window", category: "ai", status: "open", created: 1742601600000, completedAt: null },
+  { id: 61, text: "Create tools-registry repo in JetExcellence GitHub org", category: "ai", status: "open", created: 1742601600000, completedAt: null },
+  { id: 62, text: "Draft README template for AI tools submissions", category: "ai", status: "open", created: 1742601600000, completedAt: null },
+  // INTRANET / HR
+  { id: 70, text: "Evaluate intranet platform: Next.js vs Notion vs custom", category: "ai", status: "open", created: 1742601600000, completedAt: null },
+  { id: 80, text: "Confirm LinkedIn Recruiter subscription tier for Fabiana", category: "hr", status: "open", created: 1742601600000, completedAt: null },
+];
+
+if (!localStorage.getItem(STORAGE_KEY)) {
+  saveTasks(DEFAULT_TASKS);
+}
+
 cleanOldDone();
 render();
 updateClock();
