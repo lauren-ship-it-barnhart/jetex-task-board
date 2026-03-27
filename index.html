@@ -41,6 +41,40 @@
     letter-spacing: -0.5px;
   }
   header h1 span { color: var(--accent); }
+  .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .top-nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .top-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    background: var(--card);
+    transition: all 0.2s;
+  }
+  .top-nav a:hover {
+    color: var(--text);
+    border-color: #3a3d4a;
+  }
+  .top-nav a.active {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
   .header-right { text-align: right; }
   #clock {
     font-size: 14px;
@@ -261,7 +295,13 @@
 <body>
 
 <header>
-  <h1><span>JetEx</span> Task Board</h1>
+  <div class="header-left">
+    <h1><span>JetEx</span> Task Board</h1>
+    <nav class="top-nav">
+      <a class="active" href="./index.html">Task Board</a>
+      <a href="./plan.html">30/60/90 Plan</a>
+    </nav>
+  </div>
   <div class="header-right">
     <div id="clock"></div>
     <div id="sessions-bar"></div>
