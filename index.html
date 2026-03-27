@@ -286,6 +286,37 @@
     padding: 30px 0;
     font-style: italic;
   }
+  .toast-wrap {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 9999;
+    pointer-events: none;
+  }
+  .toast {
+    min-width: 240px;
+    max-width: 320px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(26, 29, 39, 0.96);
+    color: var(--text);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    font-size: 13px;
+    line-height: 1.4;
+    transform: translateY(10px);
+    opacity: 0;
+    animation: toast-in 0.18s ease-out forwards;
+  }
+  .toast.success { border-color: rgba(74, 222, 128, 0.35); }
+  .toast.error { border-color: rgba(248, 113, 113, 0.35); }
+  .toast.info { border-color: rgba(96, 213, 250, 0.35); }
+  @keyframes toast-in {
+    to { transform: translateY(0); opacity: 1; }
+  }
 
   @media (max-width: 900px) {
     .columns { grid-template-columns: 1fr; }
@@ -348,6 +379,8 @@
   </div>
 </div>
 
+<div class="toast-wrap" id="toast-wrap"></div>
+
 <script>
 // ========== CONFIG ==========
 const SHEET_ID = '170TEmIyh5wEcY_oGbo6CEzLrYQds-tNcLqW_E-L2PE4';
@@ -392,6 +425,20 @@ function parseCSVLine(line) {
 
 // ========== DATA LAYER ==========
 let cachedTasks = [];
+
+function showToast(message, kind = 'info') {
+  const wrap = document.getElementById('toast-wrap');
+  if (!wrap) return;
+  const el = document.createElement('div');
+  el.className = `toast ${kind}`;
+  el.textContent = message;
+  wrap.appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(10px)';
+    setTimeout(() => el.remove(), 180);
+  }, 2400);
+}
 
 async function fetchTasksFromSheet() {
   try {
@@ -450,10 +497,19 @@ async function writeToSheet(action, data) {
     });
     const result = await resp.json();
     console.log('API response:', result);
+    if (!result.success) {
+      showToast(result.error || 'Task update failed', 'error');
+      return false;
+    }
+    if (action === 'complete') showToast('Task marked complete', 'success');
+    else if (action === 'reopen') showToast('Task reopened', 'info');
+    else if (action === 'urgent') showToast('Task priority updated', 'info');
+    else if (action === 'delete') showToast('Task deleted', 'success');
     setTimeout(() => poll(), 1000);
     return result.success;
   } catch(e) {
     console.error('Write failed:', e);
+    showToast('Task update failed', 'error');
     return false;
   }
 }
@@ -488,8 +544,12 @@ async function addTask() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(task),
     });
+    showToast('Task added', 'success');
     setTimeout(() => poll(), 1000);
-  } catch(e) { console.error('Add failed:', e); }
+  } catch(e) {
+    console.error('Add failed:', e);
+    showToast('Task add failed', 'error');
+  }
 }
 
 async function toggleDone(id) {
