@@ -399,24 +399,32 @@ function loadTasks() {
   return cachedTasks.length ? cachedTasks : (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
 }
 
-// ========== WRITE VIA APPS SCRIPT ==========
-async function writeToSheet(action, data) {
-  if (!APPS_SCRIPT_URL) return false;
-  try {
-    // Use no-cors POST — Apps Script will process it even though we can't read the response
-    const payload = JSON.stringify({ action, ...data });
-    await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: payload,
-    });
-    // Re-fetch from sheet after a short delay to confirm the change
-    setTimeout(() => poll(), 1500);
-    return true;
-  } catch(e) {
-    console.error('Write failed:', e);
-    return false;
-  }
+// ========== WRITE VIA APPS SCRIPT (JSONP) ==========
+let jsonpCounter = 0;
+function writeToSheet(action, data) {
+  if (!APPS_SCRIPT_URL) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    const cbName = '__taskCb' + (jsonpCounter++);
+    const params = new URLSearchParams({ action, id: data.id || '', callback: cbName });
+    const script = document.createElement('script');
+    window[cbName] = (resp) => {
+      document.head.removeChild(script);
+      delete window[cbName];
+      console.log('Apps Script response:', resp);
+      setTimeout(() => poll(), 1000);
+      resolve(true);
+    };
+    script.onerror = () => {
+      document.head.removeChild(script);
+      delete window[cbName];
+      console.error('JSONP request failed');
+      resolve(false);
+    };
+    script.src = APPS_SCRIPT_URL + '?' + params.toString();
+    document.head.appendChild(script);
+    // Safety timeout — clean up after 10s if no response
+    setTimeout(() => { if (window[cbName]) { delete window[cbName]; resolve(false); } }, 10000);
+  });
 }
 
 // ========== TASK ACTIONS ==========
