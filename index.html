@@ -313,8 +313,8 @@
 const SHEET_ID = '170TEmIyh5wEcY_oGbo6CEzLrYQds-tNcLqW_E-L2PE4';
 const TASKS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Tasks`;
 const SESSIONS_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=Sessions`;
-// Apps Script web app URL — set after deploying the script
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyx88OPYpSLy-rdvpHhZJRKS9jxrOudgmtO4hYMNkjSD2cAkJN6s8AMzn7nbLMaqlSz6Q/exec';
+// Cloud Run API for writes
+const API_URL = 'https://task-board-api-733342202720.us-east1.run.app';
 const POLL_INTERVAL = 5000; // 5 seconds
 const STORAGE_KEY = 'jetex-tasks';
 
@@ -399,32 +399,23 @@ function loadTasks() {
   return cachedTasks.length ? cachedTasks : (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
 }
 
-// ========== WRITE VIA APPS SCRIPT (JSONP) ==========
-let jsonpCounter = 0;
-function writeToSheet(action, data) {
-  if (!APPS_SCRIPT_URL) return Promise.resolve(false);
-  return new Promise((resolve) => {
-    const cbName = '__taskCb' + (jsonpCounter++);
-    const params = new URLSearchParams({ action, id: data.id || '', callback: cbName });
-    const script = document.createElement('script');
-    window[cbName] = (resp) => {
-      document.head.removeChild(script);
-      delete window[cbName];
-      console.log('Apps Script response:', resp);
-      setTimeout(() => poll(), 1000);
-      resolve(true);
-    };
-    script.onerror = () => {
-      document.head.removeChild(script);
-      delete window[cbName];
-      console.error('JSONP request failed');
-      resolve(false);
-    };
-    script.src = APPS_SCRIPT_URL + '?' + params.toString();
-    document.head.appendChild(script);
-    // Safety timeout — clean up after 10s if no response
-    setTimeout(() => { if (window[cbName]) { delete window[cbName]; resolve(false); } }, 10000);
-  });
+// ========== WRITE VIA CLOUD RUN API ==========
+async function writeToSheet(action, data) {
+  if (!API_URL) return false;
+  try {
+    const resp = await fetch(API_URL + '/action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, id: data.id || '' }),
+    });
+    const result = await resp.json();
+    console.log('API response:', result);
+    setTimeout(() => poll(), 1000);
+    return result.success;
+  } catch(e) {
+    console.error('Write failed:', e);
+    return false;
+  }
 }
 
 // ========== TASK ACTIONS ==========
@@ -450,8 +441,15 @@ async function addTask() {
   input.value = '';
   render();
 
-  // Write to sheet
-  await writeToSheet('add', task);
+  // Write to sheet via API
+  try {
+    await fetch(API_URL + '/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(task),
+    });
+    setTimeout(() => poll(), 1000);
+  } catch(e) { console.error('Add failed:', e); }
 }
 
 async function toggleDone(id) {
