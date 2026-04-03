@@ -587,15 +587,15 @@ function formatDate(ts) {
 
 function renderTask(task) {
   const isDone = task.status === 'done';
-  const idStr = JSON.stringify(String(task.id));
+  const eid = escHtml(String(task.id));
   return `
     <div class="task ${isDone ? 'completed' : ''}">
       <div class="task-top">
         <div class="task-text">${escHtml(task.text)}</div>
         <div class="task-actions">
-          ${!isDone ? `<button class="btn-urgent" onclick="toggleUrgent(${idStr})" title="${task.status === 'urgent' ? 'Set normal' : 'Mark urgent'}">!!</button>` : ''}
-          <button class="btn-done" onclick="toggleDone(${idStr})" title="${isDone ? 'Reopen' : 'Complete'}">${isDone ? '&#8634;' : '&#10003;'}</button>
-          <button class="btn-delete" onclick="deleteTask(${idStr})" title="Delete">&times;</button>
+          ${!isDone ? `<button class="btn-urgent" onclick="toggleUrgent('${eid}')" title="${task.status === 'urgent' ? 'Set normal' : 'Mark urgent'}">!!</button>` : ''}
+          <button class="btn-done" onclick="toggleDone('${eid}')" title="${isDone ? 'Reopen' : 'Complete'}">${isDone ? '&#8634;' : '&#10003;'}</button>
+          <button class="btn-delete" onclick="deleteTask('${eid}')" title="Delete">&times;</button>
         </div>
       </div>
       <div class="task-meta">
