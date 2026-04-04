@@ -176,7 +176,7 @@
 
   .columns {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
     gap: 16px;
     align-items: start;
   }
@@ -202,6 +202,8 @@
   }
   .col-urgent .dot { background: var(--red); }
   .col-open .dot { background: var(--accent); }
+  .col-waiting .dot { background: var(--orange); }
+  .col-someday .dot { background: var(--purple); }
   .col-done .dot { background: var(--green); }
   .column h2 .count {
     margin-left: auto;
@@ -360,6 +362,8 @@
   <select id="prioritySelect">
     <option value="open">Normal</option>
     <option value="urgent">Urgent</option>
+    <option value="waiting">Waiting</option>
+    <option value="someday">Someday</option>
   </select>
   <button onclick="addTask()">Add</button>
 </div>
@@ -372,6 +376,14 @@
   <div class="column col-open">
     <h2><span class="dot"></span>Open<span class="count" id="count-open">0</span></h2>
     <div id="list-open"></div>
+  </div>
+  <div class="column col-waiting">
+    <h2><span class="dot"></span>Waiting<span class="count" id="count-waiting">0</span></h2>
+    <div id="list-waiting"></div>
+  </div>
+  <div class="column col-someday">
+    <h2><span class="dot"></span>Someday<span class="count" id="count-someday">0</span></h2>
+    <div id="list-someday"></div>
   </div>
   <div class="column col-done">
     <h2><span class="dot"></span>Done<span class="count" id="count-done">0</span></h2>
@@ -616,12 +628,16 @@ function render() {
   const tasks = loadTasks();
   const urgent = tasks.filter(t => t.status === 'urgent');
   const open = tasks.filter(t => t.status === 'open');
+  const waiting = tasks.filter(t => t.status === 'waiting');
+  const someday = tasks.filter(t => t.status === 'someday');
   const today = new Date().toDateString();
   const done = tasks.filter(t => t.status === 'done');
   const doneToday = done.filter(t => t.completedAt && new Date(t.completedAt).toDateString() === today);
 
   document.getElementById('list-urgent').innerHTML = urgent.length ? urgent.map(renderTask).join('') : '<div class="empty">No urgent tasks</div>';
   document.getElementById('list-open').innerHTML = open.length ? open.map(renderTask).join('') : '<div class="empty">All clear</div>';
+  document.getElementById('list-waiting').innerHTML = waiting.length ? waiting.map(renderTask).join('') : '<div class="empty">Nothing blocked</div>';
+  document.getElementById('list-someday').innerHTML = someday.length ? someday.map(renderTask).join('') : '<div class="empty">Nothing queued</div>';
   document.getElementById('list-done').innerHTML = done.length ? done.sort((a,b) => (b.completedAt||0) - (a.completedAt||0)).map(renderTask).join('') : '<div class="empty">Nothing completed yet</div>';
 
   document.getElementById('stat-urgent').textContent = urgent.length;
@@ -629,6 +645,8 @@ function render() {
   document.getElementById('stat-done').textContent = doneToday.length;
   document.getElementById('count-urgent').textContent = urgent.length;
   document.getElementById('count-open').textContent = open.length;
+  document.getElementById('count-waiting').textContent = waiting.length;
+  document.getElementById('count-someday').textContent = someday.length;
   document.getElementById('count-done').textContent = done.length;
 }
 
