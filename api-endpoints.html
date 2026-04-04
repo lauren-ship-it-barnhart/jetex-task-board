@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JetEx API Endpoints</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e2e4ea;
+    --muted: #7a7f8e;
+    --accent: #6c8cff;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --red: #f87171;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --cyan: #60d5fa;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 24px;
+  }
+  .header-left { display: flex; flex-direction: column; gap: 12px; }
+  header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  header h1 span { color: var(--accent); }
+  .top-nav { display: flex; gap: 8px; flex-wrap: wrap; }
+  .top-nav a {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 12px; border-radius: 999px; border: 1px solid var(--border);
+    color: var(--muted); text-decoration: none; font-size: 12px;
+    font-weight: 600; letter-spacing: 0.3px; background: var(--card); transition: all 0.2s;
+  }
+  .top-nav a:hover { color: var(--text); border-color: #3a3d4a; }
+  .top-nav a.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .header-right { text-align: right; }
+  #clock { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* Stats row */
+  .stats {
+    display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .stat {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 20px; min-width: 140px; flex: 1;
+  }
+  .stat .num { font-size: 28px; font-weight: 700; }
+  .stat .num.accent { color: var(--accent); }
+  .stat .num.green { color: var(--green); }
+  .stat .num.orange { color: var(--orange); }
+  .stat .num.purple { color: var(--purple); }
+  .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+
+  /* Owner tabs */
+  .owner-tabs {
+    display: flex; gap: 0; margin-bottom: 24px; border-bottom: 2px solid var(--border);
+  }
+  .owner-tab {
+    padding: 10px 20px; cursor: pointer; font-size: 13px; font-weight: 600;
+    color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -2px;
+    transition: all 0.15s; user-select: none;
+  }
+  .owner-tab:hover { color: var(--text); }
+  .owner-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .owner-tab .badge {
+    display: inline-block; background: var(--card); border: 1px solid var(--border);
+    border-radius: 999px; padding: 1px 8px; font-size: 11px; margin-left: 6px;
+    color: var(--muted); font-weight: 500;
+  }
+  .owner-tab.active .badge { background: rgba(108,140,255,0.15); color: var(--accent); border-color: rgba(108,140,255,0.3); }
+
+  /* Sticky nav for sections */
+  .section-nav {
+    position: sticky; top: 0; z-index: 100; background: var(--bg);
+    border-bottom: 1px solid var(--border); padding: 8px 0; margin-bottom: 20px;
+    display: flex; gap: 6px; overflow-x: auto;
+  }
+  .section-nav a {
+    color: var(--muted); text-decoration: none; font-size: 12px; font-weight: 500;
+    padding: 5px 10px; border-radius: 6px; white-space: nowrap; transition: all 0.15s;
+  }
+  .section-nav a:hover { color: var(--text); background: var(--card); }
+
+  /* Sections */
+  .api-owner { display: none; }
+  .api-owner.visible { display: block; }
+
+  .section { margin-bottom: 32px; }
+  .section-header {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .section-icon {
+    width: 30px; height: 30px; border-radius: 8px; display: flex;
+    align-items: center; justify-content: center; font-size: 13px;
+    font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .section-title { font-size: 16px; font-weight: 700; }
+  .section-count {
+    font-size: 11px; color: var(--muted); background: var(--card);
+    border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px;
+  }
+  .section-desc { color: var(--muted); font-size: 13px; margin-bottom: 12px; margin-left: 40px; }
+
+  /* Endpoints */
+  .ep {
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 6px; overflow: hidden; transition: border-color 0.15s;
+  }
+  .ep:hover { border-color: #3a3d4a; }
+  .ep-row {
+    padding: 10px 14px; display: flex; align-items: center; gap: 10px;
+    cursor: pointer; user-select: none;
+  }
+  .method {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    padding: 3px 7px; border-radius: 4px; min-width: 50px; text-align: center;
+    letter-spacing: 0.04em; flex-shrink: 0; font-family: monospace;
+  }
+  .method.get { background: rgba(74,222,128,0.12); color: var(--green); }
+  .method.post { background: rgba(108,140,255,0.12); color: var(--accent); }
+  .method.patch { background: rgba(250,204,21,0.12); color: var(--yellow); }
+  .method.put { background: rgba(251,146,60,0.12); color: var(--orange); }
+  .method.delete { background: rgba(248,113,113,0.12); color: var(--red); }
+  .path {
+    font-family: 'SF Mono', 'Fira Code', Consolas, monospace;
+    font-size: 13px; color: var(--text);
+  }
+  .path .param { color: var(--cyan); }
+  .ep-summary { color: var(--muted); font-size: 12px; margin-left: auto; white-space: nowrap; }
+  .chev { color: var(--muted); font-size: 10px; transition: transform 0.2s; flex-shrink: 0; }
+  .ep.open .chev { transform: rotate(90deg); }
+
+  .ep-detail { display: none; padding: 0 14px 12px; border-top: 1px solid var(--border); }
+  .ep.open .ep-detail { display: block; }
+  .ep-detail p { color: var(--muted); font-size: 13px; margin-top: 8px; line-height: 1.5; }
+
+  .tag {
+    display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 6px;
+    border-radius: 3px; text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  .tag-auth { background: rgba(167,139,250,0.12); color: var(--purple); }
+  .tag-audit { background: rgba(96,213,250,0.12); color: var(--cyan); }
+  .tag-faa { background: rgba(248,113,113,0.12); color: var(--red); }
+  .tag-chaz { background: rgba(251,146,60,0.12); color: var(--orange); }
+
+  .resp {
+    display: inline-block; font-size: 10px; font-weight: 600;
+    padding: 2px 6px; border-radius: 3px; margin-right: 4px;
+  }
+  .r200 { background: rgba(74,222,128,0.12); color: var(--green); }
+  .r201 { background: rgba(108,140,255,0.12); color: var(--accent); }
+  .r204 { background: rgba(122,127,142,0.12); color: var(--muted); }
+  .r400 { background: rgba(250,204,21,0.12); color: var(--yellow); }
+  .r404 { background: rgba(248,113,113,0.12); color: var(--red); }
+  .r409 { background: rgba(251,146,60,0.12); color: var(--orange); }
+
+  table.params {
+    width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px;
+  }
+  table.params th {
+    text-align: left; color: var(--muted); font-weight: 600; padding: 5px 6px;
+    border-bottom: 1px solid var(--border); font-size: 10px;
+    text-transform: uppercase; letter-spacing: 0.04em;
+  }
+  table.params td {
+    padding: 5px 6px; border-bottom: 1px solid rgba(42,45,58,0.5); vertical-align: top;
+  }
+  table.params td:first-child {
+    font-family: 'SF Mono', 'Fira Code', monospace; color: var(--cyan); white-space: nowrap; font-size: 12px;
+  }
+  .req { color: var(--red); font-size: 10px; font-weight: 600; }
+  .opt { color: var(--muted); font-size: 10px; }
+  .tp { font-size: 11px; color: var(--purple); font-family: monospace; }
+
+  .footer {
+    text-align: center; color: var(--muted); font-size: 12px;
+    padding: 32px 0 16px; border-top: 1px solid var(--border); margin-top: 32px;
+  }
+
+  /* Search */
+  .search-bar {
+    display: flex; gap: 8px; margin-bottom: 20px;
+  }
+  .search-bar input {
+    flex: 1; background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; color: var(--text); font-size: 13px; outline: none;
+    font-family: inherit;
+  }
+  .search-bar input:focus { border-color: var(--accent); }
+  .search-bar input::placeholder { color: var(--muted); }
+
+  @media (max-width: 768px) {
+    .ep-summary { display: none; }
+    body { padding: 12px; }
+    .stats { gap: 8px; }
+    .stat { min-width: 100px; padding: 10px 14px; }
+    .stat .num { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1><span>JetEx</span> API Endpoints</h1>
+    <div class="top-nav">
+      <a href="./index.html">Task Board</a>
+      <a href="./plan.html">30/60/90 Plan</a>
+      <a class="active" href="./api-endpoints.html">API Endpoints</a>
+    </div>
+  </div>
+  <div class="header-right">
+    <div id="clock"></div>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num accent">110</div><div class="label">Total Endpoints</div></div>
+  <div class="stat"><div class="num green">26</div><div class="label">Lauren (EOS Ontology)</div></div>
+  <div class="stat"><div class="num orange">84</div><div class="label">Chaz (VP Dashboard)</div></div>
+  <div class="stat"><div class="num purple">2</div><div class="label">API Services</div></div>
+</div>
+
+<div class="search-bar">
+  <input type="text" id="search" placeholder="Search endpoints... (path, method, or description)" oninput="filterEndpoints()">
+</div>
+
+<div class="owner-tabs">
+  <div class="owner-tab active" onclick="showOwner('lauren')">Lauren's API <span class="badge">26</span></div>
+  <div class="owner-tab" onclick="showOwner('chaz')">Chaz's API <span class="badge">84</span></div>
+  <div class="owner-tab" onclick="showOwner('all')">All <span class="badge">110</span></div>
+</div>
+
+<!-- ============================================================ -->
+<!-- LAUREN'S ENDPOINTS — EOS Ontology API                        -->
+<!-- ============================================================ -->
+<div class="api-owner visible" id="owner-lauren">
+
+<div class="section-nav" id="nav-lauren">
+  <a href="#l-health">Health</a>
+  <a href="#l-aircraft">Aircraft</a>
+  <a href="#l-schedule">Schedule</a>
+  <a href="#l-dispatch">Dispatch</a>
+  <a href="#l-board">Board</a>
+  <a href="#l-ontology">Ontology</a>
+</div>
+
+<!-- Health -->
+<div class="section" id="l-health">
+  <div class="section-header">
+    <div class="section-icon" style="background:#475569;">H</div>
+    <div class="section-title">Health</div>
+    <div class="section-count">2 endpoints</div>
+  </div>
+  <div class="section-desc">Service health and metadata &mdash; <code>ontology-api</code> on Cloud Run</div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/</span><span class="ep-summary">Service info + version</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Returns service name, version, phase, link to /docs.</p><span class="resp r200">200</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/health</span><span class="ep-summary">Health check</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Cloud Run / load balancer probe. Returns <code>{"status":"ok"}</code></p><span class="resp r200">200</span></div>
+  </div>
+</div>
+
+<!-- Aircraft -->
+<div class="section" id="l-aircraft">
+  <div class="section-header">
+    <div class="section-icon" style="background:#6c8cff;">A</div>
+    <div class="section-title">Aircraft</div>
+    <div class="section-count">7 endpoints</div>
+  </div>
+  <div class="section-desc">Fleet status, utilization, trips, MX work orders, actions. <span class="tag tag-auth">API Key</span> Source: Cloud SQL + BigQuery</div>
+
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/aircraft</span><span class="ep-summary">List all aircraft</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>All active aircraft with optional filters (status, fleet_type, category).</p>
+    <table class="params"><tr><th>Param</th><th>Type</th><th></th><th>Description</th></tr>
+    <tr><td>status</td><td><span class="tp">string</span></td><td><span class="opt">opt</span></td><td>AOG, InService, etc.</td></tr>
+    <tr><td>fleet_type</td><td><span class="tp">string</span></td><td><span class="opt">opt</span></td><td>Citation X, Hawker 800, Other</td></tr>
+    <tr><td>category</td><td><span class="tp">string</span></td><td><span class="opt">opt</span></td><td>Owned, Managed</td></tr>
+    </table><br><span class="resp r200">200</span> <code>AircraftListResponse</code></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/aircraft/<span class="param">{tail}</span></span><span class="ep-summary">Detail + relationships</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Full aircraft with trips, work orders, discrepancies, utilization, crew.</p><span class="resp r200">200</span> <code>AircraftDetailResponse</code> &nbsp;<span class="resp r404">404</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/aircraft/<span class="param">{tail}</span>/trips</span><span class="ep-summary">Trip history</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Trip history from BigQuery. Params: days (default 90), limit (default 50).</p><span class="resp r200">200</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/aircraft/<span class="param">{tail}</span>/work-orders</span><span class="ep-summary">Active MX work orders</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Active work orders from <code>jet_insight.active_mx_events</code>.</p><span class="resp r200">200</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/aircraft/<span class="param">{tail}</span>/utilization</span><span class="ep-summary">Utilization metrics</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Flight hours, block hours, trips, revenue, fuel burn. Param: days (default 30).</p><span class="resp r200">200</span> <code>AircraftUtilization</code></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/aircraft/status/aog</span><span class="ep-summary">All AOG aircraft</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>AOG aircraft with elapsed time since grounding.</p><span class="resp r200">200</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method post">POST</span><span class="path">/v1/aircraft/<span class="param">{tail}</span>/actions/<span class="param">{action}</span></span><span class="ep-summary">Execute action</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Risk-tiered actions: update_status (low), mark_aog (medium), clear_aog (medium), assign_crew (medium).</p><span class="resp r200">200</span> <code>ActionResponse</code></div>
+  </div>
+</div>
+
+<!-- Schedule -->
+<div class="section" id="l-schedule">
+  <div class="section-header">
+    <div class="section-icon" style="background:#4ade80;">S</div>
+    <div class="section-title">Schedule</div>
+    <div class="section-count">7 endpoints</div>
+  </div>
+  <div class="section-desc">Gantt board data layer. CRUD + conflict detection. <span class="tag tag-auth">API Key</span> <span class="tag tag-audit">Audit Logged</span> Source: Cloud SQL <code>schedule_blocks</code></div>
+
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/schedule</span><span class="ep-summary">List blocks (Gantt data)</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>All schedule blocks in a time range. Primary data source for the Gantt board.</p>
+    <table class="params"><tr><th>Param</th><th>Type</th><th></th><th></th></tr>
+    <tr><td>start</td><td><span class="tp">datetime</span></td><td><span class="req">req</span></td><td>Period start</td></tr>
+    <tr><td>end</td><td><span class="tp">datetime</span></td><td><span class="req">req</span></td><td>Period end</td></tr>
+    <tr><td>tail</td><td><span class="tp">string</span></td><td><span class="opt">opt</span></td><td>Filter by tail</td></tr>
+    <tr><td>block_type</td><td><span class="tp">string</span></td><td><span class="opt">opt</span></td><td>trip, maintenance, reposition, hold, unavailable</td></tr>
+    </table><br><span class="resp r200">200</span> <code>ScheduleListResponse</code></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/schedule/<span class="param">{block_id}</span></span><span class="ep-summary">Get single block</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Single schedule block by UUID.</p><span class="resp r200">200</span> &nbsp;<span class="resp r404">404</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method post">POST</span><span class="path">/v1/schedule</span><span class="ep-summary">Create block</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Create schedule block (assign trip to tail). DB EXCLUDE constraint rejects overlaps.</p>
+    <table class="params"><tr><th>Body</th><th>Type</th><th></th><th></th></tr>
+    <tr><td>tail_number</td><td><span class="tp">string</span></td><td><span class="req">req</span></td><td>Aircraft tail</td></tr>
+    <tr><td>block_type</td><td><span class="tp">enum</span></td><td><span class="req">req</span></td><td>trip, maintenance, reposition, hold, unavailable</td></tr>
+    <tr><td>start_time</td><td><span class="tp">datetime</span></td><td><span class="req">req</span></td><td></td></tr>
+    <tr><td>end_time</td><td><span class="tp">datetime</span></td><td><span class="req">req</span></td><td></td></tr>
+    <tr><td>trip_id</td><td><span class="tp">string</span></td><td><span class="opt">opt</span></td><td></td></tr>
+    </table><br><span class="resp r201">201</span> &nbsp;<span class="resp r409">409</span> Scheduling conflict</div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method patch">PATCH</span><span class="path">/v1/schedule/<span class="param">{block_id}</span></span><span class="ep-summary">Move / resize (drag-and-drop)</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Update block &mdash; move to different tail, change times. Audit log records old/new.</p><span class="resp r200">200</span> &nbsp;<span class="resp r409">409</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method delete">DELETE</span><span class="path">/v1/schedule/<span class="param">{block_id}</span></span><span class="ep-summary">Delete block</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Remove block. Audit entry records deletion with old values and reason.</p><span class="resp r204">204</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/schedule/conflicts/check</span><span class="ep-summary">Pre-check conflicts</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Check for conflicts before creating/moving a block. Use before drag-and-drop.</p>
+    <table class="params"><tr><th>Param</th><th>Type</th><th></th><th></th></tr>
+    <tr><td>tail</td><td><span class="tp">string</span></td><td><span class="req">req</span></td><td></td></tr>
+    <tr><td>start</td><td><span class="tp">datetime</span></td><td><span class="req">req</span></td><td></td></tr>
+    <tr><td>end</td><td><span class="tp">datetime</span></td><td><span class="req">req</span></td><td></td></tr>
+    <tr><td>exclude_block_id</td><td><span class="tp">string</span></td><td><span class="opt">opt</span></td><td>For move ops</td></tr>
+    </table><br><span class="resp r200">200</span> <code>ConflictCheckResponse</code></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method post">POST</span><span class="path">/v1/schedule/init-tables</span><span class="ep-summary">Create tables (admin)</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>One-time: create schedule_blocks + dispatch_audit_log with indexes and exclusion constraint.</p><span class="resp r200">200</span></div>
+  </div>
+</div>
+
+<!-- Dispatch -->
+<div class="section" id="l-dispatch">
+  <div class="section-header">
+    <div class="section-icon" style="background:#f87171;">D</div>
+    <div class="section-title">Dispatch</div>
+    <div class="section-count">7 endpoints</div>
+  </div>
+  <div class="section-desc">Part 135 flight release workflow. 9-item checklist, sign-off enforcement. <span class="tag tag-auth">API Key</span> <span class="tag tag-audit">Audit Logged</span> <span class="tag tag-faa">FAA 135</span></div>
+
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/dispatch/releases</span><span class="ep-summary">List releases</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Filter by status, tail, trip_id, limit.</p><span class="resp r200">200</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/dispatch/releases/<span class="param">{release_id}</span></span><span class="ep-summary">Get release details</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Full checklist status for a release.</p><span class="resp r200">200</span> &nbsp;<span class="resp r404">404</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method post">POST</span><span class="path">/v1/dispatch/releases</span><span class="ep-summary">Create release</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Create dispatch release for a trip. Starts as draft. Rejects if active release exists.</p>
+    <table class="params"><tr><th>Body</th><th>Type</th><th></th><th></th></tr>
+    <tr><td>trip_id</td><td><span class="tp">string</span></td><td><span class="req">req</span></td><td></td></tr>
+    <tr><td>tail_number</td><td><span class="tp">string</span></td><td><span class="req">req</span></td><td></td></tr>
+    <tr><td>pic_crew_id</td><td><span class="tp">string</span></td><td><span class="req">req</span></td><td></td></tr>
+    <tr><td>sic_crew_id</td><td><span class="tp">string</span></td><td><span class="opt">opt</span></td><td></td></tr>
+    </table><br><span class="resp r201">201</span> &nbsp;<span class="resp r409">409</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method patch">PATCH</span><span class="path">/v1/dispatch/releases/<span class="param">{release_id}</span></span><span class="ep-summary">Update checklist</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Update checklist items: weather_briefed, notams_reviewed, wb_computed, fuel_planned, mel_checked, airworthiness_verified, crew_duty_verified, passenger_manifest, frat_completed, plus load manifest fields.</p><span class="resp r200">200</span> &nbsp;<span class="resp r400">400</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method post">POST</span><span class="path">/v1/dispatch/releases/<span class="param">{release_id}</span>/sign-off</span><span class="ep-summary">Part 135 sign-off</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Final sign-off. All 9 checklist items must be TRUE. Only GOM-named personnel (135.77). Records who + when for FAA audit.</p>
+    <table class="params"><tr><th>Param</th><th>Type</th><th></th><th></th></tr>
+    <tr><td>signed_by</td><td><span class="tp">string</span></td><td><span class="req">req</span></td><td>Person signing off</td></tr>
+    </table><br><span class="resp r200">200</span> Released &nbsp;<span class="resp r400">400</span> Incomplete checklist</div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method post">POST</span><span class="path">/v1/dispatch/releases/<span class="param">{release_id}</span>/cancel</span><span class="ep-summary">Cancel release</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Cancel a dispatch release. Audit-logged with reason.</p><span class="resp r200">200</span></div>
+  </div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method post">POST</span><span class="path">/v1/dispatch/init-tables</span><span class="ep-summary">Create tables (admin)</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>One-time: create dispatch_releases table.</p><span class="resp r200">200</span></div>
+  </div>
+</div>
+
+<!-- Board -->
+<div class="section" id="l-board">
+  <div class="section-header">
+    <div class="section-icon" style="background:#fb923c;">B</div>
+    <div class="section-title">Board</div>
+    <div class="section-count">1 endpoint</div>
+  </div>
+  <div class="section-desc">Composite Gantt board data &mdash; one call gets everything. <span class="tag tag-auth">API Key</span></div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/board</span><span class="ep-summary">Full Gantt board data</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>Returns schedule blocks (bars), aircraft (Y-axis rows), and unassigned trips (sidebar queue) in one call.</p>
+    <table class="params"><tr><th>Param</th><th>Type</th><th></th><th></th></tr>
+    <tr><td>start</td><td><span class="tp">datetime</span></td><td><span class="req">req</span></td><td>Board period start</td></tr>
+    <tr><td>end</td><td><span class="tp">datetime</span></td><td><span class="req">req</span></td><td>Board period end</td></tr>
+    <tr><td>fleet_type</td><td><span class="tp">string</span></td><td><span class="opt">opt</span></td><td>Citation X, Hawker 800, Other</td></tr>
+    </table><br><span class="resp r200">200</span> <code>BoardResponse {schedule_blocks[], aircraft[], unassigned_trips[]}</code></div>
+  </div>
+</div>
+
+<!-- Ontology -->
+<div class="section" id="l-ontology">
+  <div class="section-header">
+    <div class="section-icon" style="background:#a78bfa;">O</div>
+    <div class="section-title">Ontology</div>
+    <div class="section-count">1 endpoint</div>
+  </div>
+  <div class="section-desc">Self-documenting schema &mdash; 9 business objects. <span class="tag tag-auth">API Key</span></div>
+  <div class="ep" onclick="this.classList.toggle('open')">
+    <div class="ep-row"><span class="method get">GET</span><span class="path">/v1/ontology/schema</span><span class="ep-summary">Full ontology schema</span><span class="chev">&#9654;</span></div>
+    <div class="ep-detail"><p>All 9 objects: Aircraft, Trip, FlightLeg, Quote, Customer, CrewMember, WorkOrder, Invoice, Discrepancy. With properties, relationships, and available actions.</p><span class="resp r200">200</span> <code>OntologySchema</code></div>
+  </div>
+</div>
+
+</div><!-- /owner-lauren -->
+
+
+<!-- ============================================================ -->
+<!-- CHAZ'S ENDPOINTS — VP Dashboard API (api.jetexcellence.com)  -->
+<!-- ============================================================ -->
+<div class="api-owner" id="owner-chaz">
+
+<div class="section-nav" id="nav-chaz">
+  <a href="#c-email">Email</a>
+  <a href="#c-vendor">Vendors</a>
+  <a href="#c-intacct">Intacct</a>
+  <a href="#c-fuel">Fuel</a>
+  <a href="#c-flights">Flights</a>
+  <a href="#c-airports">Airports</a>
+  <a href="#c-aircraft">Aircraft</a>
+  <a href="#c-geo">Geocoding</a>
+</div>
+
+<!-- Chaz - Email -->
+<div class="section" id="c-email">
+  <div class="section-header">
+    <div class="section-icon" style="background:#fb923c;">E</div>
+    <div class="section-title">Email</div>
+    <div class="section-count">7 endpoints</div>
+    <span class="tag tag-chaz">Chaz</span>
+  </div>
+  <div class="section-desc">Microsoft Graph email operations. Host: <code>api.jetexcellence.com</code></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/email/send_direct</span><span class="ep-summary">Send a Direct HTML Email</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Send HTML email via Microsoft Graph.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/email/unread</span><span class="ep-summary">Retrieve Unread Emails</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Get unread emails from mailbox.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/email/subscriptions</span><span class="ep-summary">Create Graph subscriptions</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Create Graph subscriptions for both mailboxes.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/email/subscriptions/renew</span><span class="ep-summary">Renew subscriptions</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Renew existing Graph subscriptions.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/email/export_unread_emails</span><span class="ep-summary">Export unread as ZIP</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Export unread emails and attachments as a ZIP file.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/email/notification</span><span class="ep-summary">Graph webhook</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Public endpoint for Microsoft Graph notifications.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/email/create_folder</span><span class="ep-summary">Create mail folder</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Create a mail folder for a mailbox.</p></div></div>
+</div>
+
+<!-- Chaz - Vendors -->
+<div class="section" id="c-vendor">
+  <div class="section-header">
+    <div class="section-icon" style="background:#fb923c;">V</div>
+    <div class="section-title">Vendor Management</div>
+    <div class="section-count">5 endpoints</div>
+    <span class="tag tag-chaz">Chaz</span>
+  </div>
+  <div class="section-desc">Vendor CRUD + AOG vendor search. Host: <code>api.jetexcellence.com</code></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/vendors/</span><span class="ep-summary">List All Vendors</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>List all vendors.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/vendors/create</span><span class="ep-summary">Create Vendor</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Create a new vendor record.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method patch">PATCH</span><span class="path">/api/vendors/update</span><span class="ep-summary">Update Vendor</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Update vendor fields.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method delete">DELETE</span><span class="path">/api/vendors/delete</span><span class="ep-summary">Delete Vendor</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Delete a vendor record.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/vendors/aog/search</span><span class="ep-summary">AOG Vendor Search</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Search for vendors specializing in AOG support.</p></div></div>
+</div>
+
+<!-- Chaz - Intacct -->
+<div class="section" id="c-intacct">
+  <div class="section-header">
+    <div class="section-icon" style="background:#fb923c;">I</div>
+    <div class="section-title">Intacct</div>
+    <div class="section-count">26 endpoints</div>
+    <span class="tag tag-chaz">Chaz</span>
+  </div>
+  <div class="section-desc">Sage Intacct integration &mdash; OAuth, invoices, GL accounts, departments, reports, PDF parsing. Host: <code>api.jetexcellence.com</code></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/intacct/rest_refresh_token</span><span class="ep-summary">Refresh OAuth token</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Refresh Intacct OAuth access token automatically.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/rest_test_token</span><span class="ep-summary">Test OAuth token</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Test Intacct OAuth access token.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/intacct/save_refresh_token</span><span class="ep-summary">Save refresh token</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Manually save a refresh token.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/oauth_setup_instructions</span><span class="ep-summary">OAuth setup guide</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Get OAuth setup instructions and authorization URL.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/oauth_callback</span><span class="ep-summary">OAuth callback</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Catches authorization code from Intacct.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/intacct/oauth_exchange_code</span><span class="ep-summary">Exchange auth code</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Exchange OAuth authorization code for tokens.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/intacct/add_invoice</span><span class="ep-summary">Add invoice</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Add a new invoice to Sage Intacct.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/edit_invoice</span><span class="ep-summary">Edit invoice</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Edit an existing invoice.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/get_invoice</span><span class="ep-summary">Get invoice</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Retrieve invoice details.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/intacct/enrich_apbill</span><span class="ep-summary">Enrich AP bill</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Update line items for an APBILL.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/list_classes</span><span class="ep-summary">List classes</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>All CLASS records from Intacct.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/list_custom</span><span class="ep-summary">List custom objects</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>All Custom Object definitions.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/get_class</span><span class="ep-summary">Get class by name</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Get a CLASS record by name.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/list_accounts</span><span class="ep-summary">List GL accounts</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>All GL accounts.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/vendor_lookup</span><span class="ep-summary">Vendor lookup</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Search for vendors by name or ID.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/intacct/update_cache</span><span class="ep-summary">Update cache</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Refresh cache files from Intacct.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/list_departments</span><span class="ep-summary">List departments</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>All departments from Intacct.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/list_pdfs</span><span class="ep-summary">List processed PDFs</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>All processed invoice PDF files.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/invoices</span><span class="ep-summary">List invoices</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>All invoices with optional filters.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/cctransactions</span><span class="ep-summary">CC transactions</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Credit card transactions from Intacct.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/attachment/<span class="param">{supdocid}</span></span><span class="ep-summary">Download attachment</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Download invoice attachment PDF.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/intacct/item_department</span><span class="ep-summary">Classify item dept</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>AI-classify item description into a department.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/intacct/parse_invoice</span><span class="ep-summary">Parse PDF invoice</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Parse a PDF invoice and extract structured data.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/intacct/parse_fuel</span><span class="ep-summary">Parse fuel invoice</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Parse fuel invoice text using LLM.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method delete">DELETE</span><span class="path">/api/intacct/delete_lineitem/<span class="param">{recordno}</span></span><span class="ep-summary">Delete line item</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Delete a line item from an APBILL.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/list_reports</span><span class="ep-summary">List reports</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Available financial reports from Intacct.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/intacct/get_report</span><span class="ep-summary">Run report</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Run a financial report from Intacct.</p></div></div>
+</div>
+
+<!-- Chaz - Fuel -->
+<div class="section" id="c-fuel">
+  <div class="section-header">
+    <div class="section-icon" style="background:#fb923c;">F</div>
+    <div class="section-title">Data Warehouse &mdash; Fuel</div>
+    <div class="section-count">3 endpoints</div>
+    <span class="tag tag-chaz">Chaz</span>
+  </div>
+  <div class="section-desc">Fuel ingestion and pricing. Host: <code>api.jetexcellence.com</code></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/datawarehouse/fuel/ingest</span><span class="ep-summary">Ingest fuel CSV</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Ingest a fuel CSV file into the data warehouse.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/fuel/prices</span><span class="ep-summary">Get fuel prices</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Current fuel prices for an airport.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/datawarehouse/fuel/email_parse</span><span class="ep-summary">Parse fuel email</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Parse email for fuel price data.</p></div></div>
+</div>
+
+<!-- Chaz - Flights -->
+<div class="section" id="c-flights">
+  <div class="section-header">
+    <div class="section-icon" style="background:#fb923c;">L</div>
+    <div class="section-title">Data Warehouse &mdash; Flights</div>
+    <div class="section-count">9 endpoints</div>
+    <span class="tag tag-chaz">Chaz</span>
+  </div>
+  <div class="section-desc">Flight legs ingestion, stats, quoting, utilization. Host: <code>api.jetexcellence.com</code></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/datawarehouse/flight_legs/ingest</span><span class="ep-summary">Ingest flight data</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Ingest flight data from Excel/CSV on server.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/datawarehouse/flight_legs/upload</span><span class="ep-summary">Upload flight file</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Upload and ingest flight data file.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/flight_legs/stats</span><span class="ep-summary">Flight statistics</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Get flight statistics.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/datawarehouse/flight_legs/quote</span><span class="ep-summary">Get flight quote</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Generate a flight quote based on route data.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/flight_legs/totals</span><span class="ep-summary">Flight totals</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Total flight hours and flight count.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/flight_legs/avg_stage</span><span class="ep-summary">Avg stage length</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Average stage length.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/flight_legs/yield</span><span class="ep-summary">Yield metrics</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Flight yield metrics.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/flight_legs/flight_details</span><span class="ep-summary">Flight details</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Flight details by aircraft.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/flight_legs/flight_utilization</span><span class="ep-summary">Utilization by aircraft</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Flight utilization breakdown by aircraft.</p></div></div>
+</div>
+
+<!-- Chaz - Airports -->
+<div class="section" id="c-airports">
+  <div class="section-header">
+    <div class="section-icon" style="background:#fb923c;">P</div>
+    <div class="section-title">Data Warehouse &mdash; Airports</div>
+    <div class="section-count">3 endpoints</div>
+    <span class="tag tag-chaz">Chaz</span>
+  </div>
+  <div class="section-desc">Airport info, proximity search, updates. Host: <code>api.jetexcellence.com</code></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/airport/info</span><span class="ep-summary">Airport info</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Get airport information.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/airport/proximity</span><span class="ep-summary">Proximity search</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Get airports within proximity.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method patch">PATCH</span><span class="path">/api/datawarehouse/airport/update</span><span class="ep-summary">Update airport</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Update airport field.</p></div></div>
+</div>
+
+<!-- Chaz - Aircraft -->
+<div class="section" id="c-aircraft">
+  <div class="section-header">
+    <div class="section-icon" style="background:#fb923c;">C</div>
+    <div class="section-title">Data Warehouse &mdash; Aircraft</div>
+    <div class="section-count">8 endpoints</div>
+    <span class="tag tag-chaz">Chaz</span>
+  </div>
+  <div class="section-desc">Aircraft status, AOG, snapshots, availability trends. Host: <code>api.jetexcellence.com</code></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/aircraft/get_status</span><span class="ep-summary">Get status</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Get aircraft status.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/aircraft/aog</span><span class="ep-summary">Get AOG</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Get AOG aircraft list.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/aircraft/take_snapshot</span><span class="ep-summary">Take snapshot</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Take aircraft status snapshot.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/aircraft/availability_trend</span><span class="ep-summary">Availability trend</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Aircraft availability trend over time.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method put">PUT</span><span class="path">/api/datawarehouse/aircraft/set_status</span><span class="ep-summary">Set status</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Set aircraft status.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method put">PUT</span><span class="path">/api/datawarehouse/aircraft/update_location</span><span class="ep-summary">Update location</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Update aircraft location.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/aircraft/info</span><span class="ep-summary">Aircraft info</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Get aircraft information.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/datawarehouse/aircraft</span><span class="ep-summary">List active</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>List active aircraft.</p></div></div>
+</div>
+
+<!-- Chaz - Geocoding -->
+<div class="section" id="c-geo">
+  <div class="section-header">
+    <div class="section-icon" style="background:#fb923c;">G</div>
+    <div class="section-title">Geocoding</div>
+    <div class="section-count">4 endpoints</div>
+    <span class="tag tag-chaz">Chaz</span>
+  </div>
+  <div class="section-desc">Address geocoding, reverse geocoding, distance calculation. Host: <code>api.jetexcellence.com</code></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method post">POST</span><span class="path">/api/geocode/address</span><span class="ep-summary">Geocode address</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Geocode an address. Returns lat/long and display name.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/geocode/latlong</span><span class="ep-summary">Reverse geocode</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Reverse geocode coordinates.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/geocode/distance</span><span class="ep-summary">Calculate distance</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Calculate distance between points.</p></div></div>
+  <div class="ep" onclick="this.classList.toggle('open')"><div class="ep-row"><span class="method get">GET</span><span class="path">/api/geocode/details</span><span class="ep-summary">Location details</span><span class="chev">&#9654;</span></div><div class="ep-detail"><p>Get detailed location information.</p></div></div>
+</div>
+
+</div><!-- /owner-chaz -->
+
+
+<div class="footer">
+  Lauren's API: EOS Ontology API (FastAPI on Cloud Run) &mdash; Chaz's API: VP Dashboard (api.jetexcellence.com)<br>
+  Jet Excellence / BellAir
+</div>
+
+<script>
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = now.toLocaleString('en-US', {
+    weekday: 'short', month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+  });
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// Owner tab switching
+function showOwner(owner) {
+  document.querySelectorAll('.owner-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.api-owner').forEach(o => o.classList.remove('visible'));
+  if (owner === 'all') {
+    document.querySelectorAll('.api-owner').forEach(o => o.classList.add('visible'));
+    document.querySelectorAll('.owner-tab')[2].classList.add('active');
+  } else if (owner === 'lauren') {
+    document.getElementById('owner-lauren').classList.add('visible');
+    document.querySelectorAll('.owner-tab')[0].classList.add('active');
+  } else {
+    document.getElementById('owner-chaz').classList.add('visible');
+    document.querySelectorAll('.owner-tab')[1].classList.add('active');
+  }
+}
+
+// Search
+function filterEndpoints() {
+  const q = document.getElementById('search').value.toLowerCase().trim();
+  document.querySelectorAll('.ep').forEach(ep => {
+    const text = ep.textContent.toLowerCase();
+    ep.style.display = (!q || text.includes(q)) ? '' : 'none';
+  });
+  // Show sections that have visible endpoints
+  document.querySelectorAll('.section').forEach(sec => {
+    const visible = sec.querySelectorAll('.ep:not([style*="display: none"])');
+    sec.style.display = visible.length > 0 || !q ? '' : 'none';
+  });
+  // Show both owners when searching
+  if (q) {
+    document.querySelectorAll('.api-owner').forEach(o => o.classList.add('visible'));
+  }
+}
+</script>
+</body>
+</html>
