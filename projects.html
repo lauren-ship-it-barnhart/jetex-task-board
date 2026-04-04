@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JetEx Project Tracker</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e2e4ea;
+    --muted: #7a7f8e;
+    --accent: #6c8cff;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --red: #f87171;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --cyan: #60d5fa;
+    --blue: #6c8cff;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  header h1 span { color: var(--accent); }
+  .header-left { display: flex; flex-direction: column; gap: 12px; }
+  .top-nav { display: flex; gap: 8px; flex-wrap: wrap; }
+  .top-nav a {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 12px; border-radius: 999px; border: 1px solid var(--border);
+    color: var(--muted); text-decoration: none; font-size: 12px;
+    font-weight: 600; letter-spacing: 0.3px; background: var(--card); transition: all 0.2s;
+  }
+  .top-nav a:hover { color: var(--text); border-color: #3a3d4a; }
+  .top-nav a.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .header-right { text-align: right; }
+  #clock { font-size: 14px; color: var(--muted); line-height: 1.5; }
+  #clock .time { font-size: 20px; color: var(--text); font-weight: 500; }
+
+  /* Stats row */
+  .stats { display: flex; gap: 12px; margin-bottom: 24px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 14px 20px; flex: 1; text-align: center;
+  }
+  .stat .num { font-size: 28px; font-weight: 700; }
+  .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+  /* View tabs */
+  .view-tabs {
+    display: flex; gap: 4px; margin-bottom: 20px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 4px; width: fit-content;
+  }
+  .view-tab {
+    padding: 8px 16px; border-radius: 8px; border: none;
+    background: transparent; color: var(--muted); font-size: 13px;
+    font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .view-tab:hover { color: var(--text); }
+  .view-tab.active { background: var(--accent); color: #fff; }
+
+  /* Board view */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px; align-items: start;
+  }
+  .board-col {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; min-height: 120px;
+  }
+  .board-col h2 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--muted); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .board-col h2 .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .board-col h2 .count {
+    margin-left: auto; background: var(--bg); padding: 2px 8px;
+    border-radius: 10px; font-size: 12px; font-weight: 600;
+  }
+
+  /* Project card */
+  .project-card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; margin-bottom: 8px;
+    transition: all 0.2s; cursor: default;
+  }
+  .project-card:hover { border-color: #3a3d4a; }
+  .project-card .project-name {
+    font-size: 14px; font-weight: 600; line-height: 1.4; margin-bottom: 6px;
+  }
+  .project-card .project-desc {
+    font-size: 12px; color: var(--muted); line-height: 1.4;
+    margin-bottom: 8px; display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .project-card .project-next {
+    font-size: 12px; color: var(--cyan); margin-bottom: 8px;
+    display: flex; align-items: flex-start; gap: 4px;
+  }
+  .project-card .project-next .arrow { flex-shrink: 0; }
+  .project-card .project-blockers {
+    font-size: 12px; color: var(--red); margin-bottom: 8px;
+    display: flex; align-items: flex-start; gap: 4px;
+  }
+  .project-card .project-meta {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+  }
+  .project-card .deploy-link {
+    font-size: 10px; color: var(--green); text-decoration: none;
+    border: 1px solid rgba(74, 222, 128, 0.3); padding: 2px 8px;
+    border-radius: 10px; font-weight: 600;
+  }
+  .project-card .deploy-link:hover { background: rgba(74, 222, 128, 0.1); }
+
+  /* Tags */
+  .tag {
+    font-size: 10px; padding: 2px 8px; border-radius: 10px;
+    font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .tag-phase { background: #1a2a3a; color: var(--cyan); }
+  .tag-priority-urgent { background: #3a1a1a; color: var(--red); }
+  .tag-priority-high { background: #3b2f1a; color: var(--orange); }
+  .tag-priority-medium { background: #2a2a1a; color: var(--yellow); }
+  .tag-priority-low { background: #1a3a2a; color: var(--green); }
+  .tag-cat-operations { background: #1e3a5f; color: #60a5fa; }
+  .tag-cat-finance { background: #1a3a2a; color: var(--green); }
+  .tag-cat-sales { background: #3b2f1a; color: var(--orange); }
+  .tag-cat-recruiting { background: #3a1a3a; color: var(--purple); }
+  .tag-cat-maintenance { background: #2a2d3a; color: var(--muted); }
+  .tag-cat-it\/ai { background: #2a2a1a; color: var(--yellow); }
+  .tag-cat-fleet { background: #2a1f1a; color: #c49a6c; }
+  .tag-cat-dashboard { background: #3a1a1a; color: var(--red); }
+  .tag-cat-l10\ prep { background: #2a2a1a; color: var(--yellow); }
+  .tag-date { font-size: 10px; color: var(--muted); padding: 2px 0; }
+
+  /* Table view */
+  .table-view { width: 100%; overflow-x: auto; }
+  .project-table {
+    width: 100%; border-collapse: collapse;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden;
+  }
+  .project-table th {
+    text-align: left; padding: 12px 16px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+    border-bottom: 1px solid var(--border); background: var(--bg);
+    font-weight: 600; white-space: nowrap;
+  }
+  .project-table td {
+    padding: 12px 16px; font-size: 13px;
+    border-bottom: 1px solid var(--border); vertical-align: top;
+  }
+  .project-table tr:last-child td { border-bottom: none; }
+  .project-table tr:hover td { background: rgba(108, 140, 255, 0.04); }
+  .project-table .name-cell { font-weight: 600; min-width: 180px; }
+  .project-table .next-cell { color: var(--cyan); max-width: 250px; }
+  .project-table .blocker-cell { color: var(--red); max-width: 200px; }
+
+  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 30px 0; font-style: italic; }
+
+  .view-container { display: none; }
+  .view-container.active { display: block; }
+
+  /* Status dot colors */
+  .dot-planned { background: var(--muted); }
+  .dot-in-progress { background: var(--yellow); }
+  .dot-shipped { background: var(--green); }
+  .dot-iterating { background: var(--blue); }
+  .dot-on-hold { background: #6b7280; }
+
+  @media (max-width: 900px) {
+    .board { grid-template-columns: 1fr; }
+    .stats { flex-wrap: wrap; }
+    .stat { min-width: 120px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1><span>JetEx</span> Project Tracker</h1>
+    <nav class="top-nav">
+      <a href="./index.html">Task Board</a>
+      <a class="active" href="./projects.html">Projects</a>
+      <a href="./plan.html">30/60/90 Plan</a>
+      <a href="./api-endpoints.html">API Endpoints</a>
+    </nav>
+  </div>
+  <div class="header-right">
+    <div id="clock"></div>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="stat"><div class="num" style="color: var(--green);" id="stat-shipped">0</div><div class="label">Shipped</div></div>
+  <div class="stat"><div class="num" style="color: var(--yellow);" id="stat-active">0</div><div class="label">In Progress</div></div>
+  <div class="stat"><div class="num" style="color: var(--blue);" id="stat-iterating">0</div><div class="label">Iterating</div></div>
+  <div class="stat"><div class="num" style="color: var(--muted);" id="stat-planned">0</div><div class="label">Planned</div></div>
+  <div class="stat"><div class="num" style="color: var(--accent);" id="stat-total">0</div><div class="label">Total</div></div>
+</div>
+
+<div class="view-tabs">
+  <button class="view-tab active" onclick="switchView('board')">Board</button>
+  <button class="view-tab" onclick="switchView('active')">Active</button>
+  <button class="view-tab" onclick="switchView('shipped')">Shipped</button>
+  <button class="view-tab" onclick="switchView('table')">All Projects</button>
+</div>
+
+<div id="view-board" class="view-container active"></div>
+<div id="view-active" class="view-container"></div>
+<div id="view-shipped" class="view-container"></div>
+<div id="view-table" class="view-container"></div>
+
+<script>
+// ========== PROJECT DATA ==========
+const PROJECTS = [
+  {
+    name: "WILCO MX Bot",
+    status: "Shipped",
+    priority: "High",
+    phase: "Live",
+    category: ["IT/AI"],
+    description: "Self-hosted MX AI chatbot for maintenance manual queries. PDF viewer, voice I/O, hybrid search.",
+    nextAction: "OpenAI Realtime API for hands-free voice, JWT auth",
+    blockers: "",
+    deployUrl: "https://charlie-mx-733342202720.us-east1.run.app",
+    shipDate: "2026-03-21",
+    startDate: ""
+  },
+  {
+    name: "Intacct BigQuery Sync",
+    status: "Shipped",
+    priority: "High",
+    phase: "Live",
+    category: ["Finance", "IT/AI"],
+    description: "Full Intacct to BigQuery sync pipeline. 8 tables, daily/weekly Cloud Scheduler jobs.",
+    nextAction: "",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "2026-03-27",
+    startDate: ""
+  },
+  {
+    name: "Crew Duty Tracker",
+    status: "Shipped",
+    priority: "High",
+    phase: "Live",
+    category: ["Operations"],
+    description: "9-page Streamlit app for crew scheduling, Part 135.267 compliance, swap board, PTO workflow.",
+    nextAction: "Fix Postgres GRANTs, wire Slack alerts, add auth",
+    blockers: "",
+    deployUrl: "https://crew-duty-tracker-xrvzgpjfca-ue.a.run.app",
+    shipDate: "2026-04-02",
+    startDate: "2026-03-28"
+  },
+  {
+    name: "Cycles per Break Reporting",
+    status: "Shipped",
+    priority: "Medium",
+    phase: "Live",
+    category: ["Maintenance", "Fleet"],
+    description: "Tracks flight cycles between unscheduled maintenance events per tail number.",
+    nextAction: "",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "2026-03-15",
+    startDate: ""
+  },
+  {
+    name: "Charlie RAG Build",
+    status: "Shipped",
+    priority: "Medium",
+    phase: "Deployment",
+    category: ["IT/AI"],
+    description: "Self-hosted RAG system for MX manuals. Voyage AI embeddings + pgvector + Claude.",
+    nextAction: "Push to GitHub and deploy",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: ""
+  },
+  {
+    name: "Data Reconciliation Agent",
+    status: "Shipped",
+    priority: "High",
+    phase: "Live",
+    category: ["Finance"],
+    description: "Autonomous agent: nightly Intacct/JI/BQ reconciliation via Cloud Function + Scheduler.",
+    nextAction: "",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "2026-03-27",
+    startDate: ""
+  },
+  {
+    name: "AI Acceptable Use Policy",
+    status: "Shipped",
+    priority: "Low",
+    phase: "Live",
+    category: ["IT/AI"],
+    description: "Company-wide AI governance: 3 tool tiers, Anthropic Academy prereqs, data classification. v1.0 published.",
+    nextAction: "",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "2026-03-25",
+    startDate: ""
+  },
+  {
+    name: "JetEx OS (Enterprise OS)",
+    status: "In Progress",
+    priority: "Urgent",
+    phase: "Build",
+    category: ["IT/AI"],
+    description: "Palantir-inspired enterprise OS. Ontology layer + Sales Command, Ops Command, Owner Portal.",
+    nextAction: "Complete Aircraft endpoints, deploy ontology-api",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-04-01"
+  },
+  {
+    name: "Predictive MX Engine",
+    status: "In Progress",
+    priority: "High",
+    phase: "Deployment",
+    category: ["Maintenance", "IT/AI"],
+    description: "5 prediction endpoints: utilization, break-risk, discrepancy-patterns, scheduled-mx, forecast.",
+    nextAction: "Deploy to Cloud Run, add nightly Slack brief",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-15"
+  },
+  {
+    name: "JetEx FMS (JI Replacement)",
+    status: "In Progress",
+    priority: "High",
+    phase: "Design",
+    category: ["Operations", "IT/AI"],
+    description: "Full FMS replacing Jet Insight. Scheduling Gantt, flight release, Part 135 compliance. Core of Ops Command.",
+    nextAction: "Architecture review, select scheduling UI library",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-20"
+  },
+  {
+    name: "JetEx Intranet",
+    status: "In Progress",
+    priority: "Medium",
+    phase: "Build",
+    category: ["IT/AI"],
+    description: "Custom intranet (FastAPI + Alpine.js + Cloud Run) replacing SharePoint. Phase 1 complete.",
+    nextAction: "Phase 2 — Microsoft Graph API integration",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-10"
+  },
+  {
+    name: "Floating Fleet Positioning",
+    status: "In Progress",
+    priority: "High",
+    phase: "Build",
+    category: ["Fleet", "IT/AI"],
+    description: "In-house fleet positioning tool. Demand model + deadhead analysis + nightly Slack brief.",
+    nextAction: "Deploy Phase 1, build empty leg engine (Phase 2)",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-18"
+  },
+  {
+    name: "Daily Briefing Agent",
+    status: "In Progress",
+    priority: "High",
+    phase: "Design",
+    category: ["IT/AI"],
+    description: "AI assistant scanning McQueen's Outlook inbox, sending daily briefing with unreplied items + AI-suggested replies.",
+    nextAction: "Build email scanning, suggested replies, carry-forward logic",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-28"
+  },
+  {
+    name: "Social Media AI Manager",
+    status: "In Progress",
+    priority: "Medium",
+    phase: "Build",
+    category: ["Sales"],
+    description: "AI replacing part-time social media manager. 61-post content calendar, 5 Canva template types, dual campaigns.",
+    nextAction: "Select templates, set up Buffer/Later, execute platform setup",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-15"
+  },
+  {
+    name: "AI Tools Registry",
+    status: "In Progress",
+    priority: "Medium",
+    phase: "Scoping",
+    category: ["IT/AI"],
+    description: "Company-wide competition to track & share Claude-built tools via GitHub org registry.",
+    nextAction: "Lock competition mechanics, draft README template, create repo",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-25"
+  },
+  {
+    name: "Managed Fleet P&L",
+    status: "In Progress",
+    priority: "High",
+    phase: "Build",
+    category: ["Finance"],
+    description: "Per-aircraft P&Ls for N808MC, N118DL, N140MC. BigQuery revenue done, need Intacct GL + BambooHR payroll.",
+    nextAction: "Connect remaining data sources, verify crew allocation",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-20"
+  },
+  {
+    name: "Trip Feasibility Bot",
+    status: "In Progress",
+    priority: "Medium",
+    phase: "Build",
+    category: ["Operations"],
+    description: "Slack /feasibility bot replacing manual pilot trip review. Green/yellow/red verdicts.",
+    nextAction: "Create Slack app, add GCP secrets, deploy via deploy.sh",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-22"
+  },
+  {
+    name: "Weekly KPI Automation",
+    status: "In Progress",
+    priority: "High",
+    phase: "Build",
+    category: ["Finance", "Sales"],
+    description: "Automated Zach's manual weekly KPI email. PG API + JI Calendar DNF + SharePoint cancellations.",
+    nextAction: "Tune revenue calculations, create Claude Code skill wrapper",
+    blockers: "PG data timing gap, 15-20% variance vs JI Analytics",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-18"
+  },
+  {
+    name: "Dashboard Build",
+    status: "In Progress",
+    priority: "High",
+    phase: "Design",
+    category: ["Dashboard"],
+    description: "Executive operational dashboard. HTML mockups and spec locked. 4 sections: Exec Summary, Commercial, Sales, Fleet.",
+    nextAction: "Begin backend data pipeline for Dashboard 1",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-25"
+  },
+  {
+    name: "Flight Logger",
+    status: "In Progress",
+    priority: "Medium",
+    phase: "Build",
+    category: ["Operations"],
+    description: "Standalone Streamlit app for post-flight data entry (OUT/OFF/ON/IN, fuel, crew, hours). Part of JI replacement.",
+    nextAction: "Build app, deploy to Cloud Run, verify BQ sync",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-03-28"
+  },
+  {
+    name: "Claude Code Optimization",
+    status: "Iterating",
+    priority: "Medium",
+    phase: "Enhancement",
+    category: ["IT/AI"],
+    description: "Ongoing optimization of Claude Code workflows — memory, agents, hooks, headless scripts, skills.",
+    nextAction: "Build session-status skill, start naming sessions",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: ""
+  },
+  {
+    name: "HubSpot CRM",
+    status: "Planned",
+    priority: "High",
+    phase: "Scoping",
+    category: ["Sales"],
+    description: "CRM platform for charter sales pipeline. 5 reps, BigQuery sync planned. Account created 2026-03-23.",
+    nextAction: "Configure pipelines and integrations",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: ""
+  },
+  {
+    name: "McQueen Bot Initiative",
+    status: "Planned",
+    priority: "Medium",
+    phase: "Scoping",
+    category: ["IT/AI", "Recruiting"],
+    description: "CEO-initiated AI bot project. HR/hiring bot for EVP of MX search. ChatGPT Enterprise Custom GPTs for MVP.",
+    nextAction: "Define requirements, confirm LinkedIn Recruiter tier",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: ""
+  },
+  {
+    name: "Post-Trip Survey Automation",
+    status: "Planned",
+    priority: "Medium",
+    phase: "Scoping",
+    category: ["Sales"],
+    description: "HubSpot automation for customer post-trip surveys.",
+    nextAction: "Test automated survey trigger flow",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: ""
+  },
+  {
+    name: "Ninety.io + Zapier Integration",
+    status: "Planned",
+    priority: "Low",
+    phase: "Scoping",
+    category: ["IT/AI"],
+    description: "Integration between Ninety.io EOS platform and internal tools via Zapier.",
+    nextAction: "Evaluate Zapier connector for scorecard sync",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: ""
+  }
+];
+
+// ========== RENDERING HELPERS ==========
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function formatDate(d) {
+  if (!d) return '';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function categoryTag(cat) {
+  const cls = 'tag-cat-' + cat.toLowerCase();
+  return `<span class="tag ${cls}">${esc(cat)}</span>`;
+}
+
+function priorityTag(p) {
+  return `<span class="tag tag-priority-${p.toLowerCase()}">${esc(p)}</span>`;
+}
+
+function phaseTag(p) {
+  return `<span class="tag tag-phase">${esc(p)}</span>`;
+}
+
+function renderCard(p) {
+  return `
+    <div class="project-card">
+      <div class="project-name">${esc(p.name)}</div>
+      <div class="project-desc">${esc(p.description)}</div>
+      ${p.nextAction ? `<div class="project-next"><span class="arrow">&#8594;</span> ${esc(p.nextAction)}</div>` : ''}
+      ${p.blockers ? `<div class="project-blockers">&#9888; ${esc(p.blockers)}</div>` : ''}
+      <div class="project-meta">
+        ${p.category.map(categoryTag).join('')}
+        ${phaseTag(p.phase)}
+        ${priorityTag(p.priority)}
+        ${p.shipDate ? `<span class="tag-date">Shipped ${formatDate(p.shipDate)}</span>` : ''}
+        ${p.startDate && !p.shipDate ? `<span class="tag-date">Started ${formatDate(p.startDate)}</span>` : ''}
+        ${p.deployUrl ? `<a class="deploy-link" href="${esc(p.deployUrl)}" target="_blank" rel="noopener">LIVE</a>` : ''}
+      </div>
+    </div>`;
+}
+
+// ========== VIEWS ==========
+function renderBoardView() {
+  const statuses = [
+    { key: 'In Progress', label: 'In Progress', dotClass: 'dot-in-progress' },
+    { key: 'Planned', label: 'Planned', dotClass: 'dot-planned' },
+    { key: 'Shipped', label: 'Shipped', dotClass: 'dot-shipped' },
+    { key: 'Iterating', label: 'Iterating', dotClass: 'dot-iterating' },
+  ];
+
+  let html = '<div class="board">';
+  for (const s of statuses) {
+    const items = PROJECTS.filter(p => p.status === s.key);
+    // Sort: Urgent first, then High, Medium, Low
+    const priorityOrder = { Urgent: 0, High: 1, Medium: 2, Low: 3 };
+    items.sort((a, b) => (priorityOrder[a.priority] || 9) - (priorityOrder[b.priority] || 9));
+    html += `
+      <div class="board-col">
+        <h2><span class="dot ${s.dotClass}"></span>${s.label}<span class="count">${items.length}</span></h2>
+        ${items.length ? items.map(renderCard).join('') : '<div class="empty">No projects</div>'}
+      </div>`;
+  }
+  html += '</div>';
+  document.getElementById('view-board').innerHTML = html;
+}
+
+function renderActiveView() {
+  const active = PROJECTS.filter(p => p.status === 'In Progress');
+  const priorityOrder = { Urgent: 0, High: 1, Medium: 2, Low: 3 };
+  active.sort((a, b) => (priorityOrder[a.priority] || 9) - (priorityOrder[b.priority] || 9));
+
+  let html = '<div class="table-view"><table class="project-table"><thead><tr>';
+  html += '<th>Project</th><th>Priority</th><th>Category</th><th>Phase</th><th>Next Action</th><th>Blockers</th>';
+  html += '</tr></thead><tbody>';
+  for (const p of active) {
+    html += `<tr>
+      <td class="name-cell">${esc(p.name)}</td>
+      <td>${priorityTag(p.priority)}</td>
+      <td>${p.category.map(categoryTag).join(' ')}</td>
+      <td>${phaseTag(p.phase)}</td>
+      <td class="next-cell">${esc(p.nextAction || '—')}</td>
+      <td class="blocker-cell">${p.blockers ? esc(p.blockers) : '—'}</td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('view-active').innerHTML = html;
+}
+
+function renderShippedView() {
+  const shipped = PROJECTS.filter(p => p.status === 'Shipped' || p.status === 'Iterating');
+  shipped.sort((a, b) => {
+    if (!a.shipDate) return 1;
+    if (!b.shipDate) return -1;
+    return b.shipDate.localeCompare(a.shipDate);
+  });
+
+  let html = '<div class="table-view"><table class="project-table"><thead><tr>';
+  html += '<th>Project</th><th>Category</th><th>Ship Date</th><th>Phase</th><th>Deploy URL</th><th>Description</th>';
+  html += '</tr></thead><tbody>';
+  for (const p of shipped) {
+    html += `<tr>
+      <td class="name-cell">${esc(p.name)}</td>
+      <td>${p.category.map(categoryTag).join(' ')}</td>
+      <td>${p.shipDate ? formatDate(p.shipDate) : '—'}</td>
+      <td>${phaseTag(p.phase)}</td>
+      <td>${p.deployUrl ? `<a class="deploy-link" href="${esc(p.deployUrl)}" target="_blank" rel="noopener">LIVE</a>` : '—'}</td>
+      <td style="max-width: 300px; color: var(--muted);">${esc(p.description)}</td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('view-shipped').innerHTML = html;
+}
+
+function renderTableView() {
+  const all = [...PROJECTS];
+  const statusOrder = { 'In Progress': 0, Planned: 1, Shipped: 2, Iterating: 3, 'On Hold': 4 };
+  const priorityOrder = { Urgent: 0, High: 1, Medium: 2, Low: 3 };
+  all.sort((a, b) => {
+    const sd = (statusOrder[a.status] ?? 9) - (statusOrder[b.status] ?? 9);
+    if (sd !== 0) return sd;
+    return (priorityOrder[a.priority] ?? 9) - (priorityOrder[b.priority] ?? 9);
+  });
+
+  let html = '<div class="table-view"><table class="project-table"><thead><tr>';
+  html += '<th>Project</th><th>Status</th><th>Priority</th><th>Category</th><th>Phase</th><th>Next Action</th>';
+  html += '</tr></thead><tbody>';
+  for (const p of all) {
+    const statusColor = {
+      'Shipped': 'var(--green)', 'In Progress': 'var(--yellow)',
+      'Planned': 'var(--muted)', 'Iterating': 'var(--blue)', 'On Hold': '#6b7280'
+    }[p.status] || 'var(--muted)';
+    html += `<tr>
+      <td class="name-cell">${esc(p.name)}</td>
+      <td><span style="color: ${statusColor}; font-weight: 600; font-size: 12px;">${esc(p.status)}</span></td>
+      <td>${priorityTag(p.priority)}</td>
+      <td>${p.category.map(categoryTag).join(' ')}</td>
+      <td>${phaseTag(p.phase)}</td>
+      <td class="next-cell">${esc(p.nextAction || '—')}</td>
+    </tr>`;
+  }
+  html += '</tbody></table></div>';
+  document.getElementById('view-table').innerHTML = html;
+}
+
+// ========== VIEW SWITCHING ==========
+function switchView(view) {
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.view-container').forEach(c => c.classList.remove('active'));
+  document.querySelector(`[onclick="switchView('${view}')"]`).classList.add('active');
+  document.getElementById('view-' + view).classList.add('active');
+}
+
+// ========== STATS ==========
+function updateStats() {
+  const shipped = PROJECTS.filter(p => p.status === 'Shipped').length;
+  const active = PROJECTS.filter(p => p.status === 'In Progress').length;
+  const iterating = PROJECTS.filter(p => p.status === 'Iterating').length;
+  const planned = PROJECTS.filter(p => p.status === 'Planned').length;
+  document.getElementById('stat-shipped').textContent = shipped;
+  document.getElementById('stat-active').textContent = active;
+  document.getElementById('stat-iterating').textContent = iterating;
+  document.getElementById('stat-planned').textContent = planned;
+  document.getElementById('stat-total').textContent = PROJECTS.length;
+}
+
+// ========== CLOCK ==========
+function updateClock() {
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const date = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  document.getElementById('clock').innerHTML = `<div class="time">${time}</div>${date}`;
+}
+
+// ========== INIT ==========
+updateStats();
+renderBoardView();
+renderActiveView();
+renderShippedView();
+renderTableView();
+updateClock();
+setInterval(updateClock, 30000);
+</script>
+</body>
+</html>
