@@ -336,11 +336,12 @@
           <th>Type</th>
           <th>Pax</th>
           <th>Travel Date</th>
+          <th>Lead</th>
           <th>CRM</th>
         </tr>
       </thead>
       <tbody id="call-log">
-        <tr><td colspan="9" class="loading">Loading…</td></tr>
+        <tr><td colspan="10" class="loading">Loading…</td></tr>
       </tbody>
     </table>
   </div>
@@ -414,6 +415,10 @@ function formatDateTime(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
   return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function isLeadGenerated(call) {
+  return Boolean(call?.raw_subject || call?.web_link);
 }
 
 function renderBars(containerId, items, labelKey, valueKey, extraFn) {
@@ -515,7 +520,7 @@ async function loadCalls() {
 
     const tbody = document.getElementById('call-log');
     if (currentCalls.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="9" class="loading">No calls yet</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="loading">No calls yet</td></tr>';
       return;
     }
 
@@ -523,6 +528,9 @@ async function loadCalls() {
       const route = (c.departure && c.destination)
         ? `<span class="route">${c.departure} → ${c.destination}</span>`
         : '<span class="muted">—</span>';
+      const lead = isLeadGenerated(c)
+        ? '<span class="badge accent">Sent</span>'
+        : '<span class="badge red">No</span>';
       const crm = c.in_crm
         ? '<span class="badge green">In CRM</span>'
         : '<span class="badge red">New</span>';
@@ -536,12 +544,13 @@ async function loadCalls() {
           <td class="muted">${c.trip_type || '—'}</td>
           <td class="muted">${c.passengers || '—'}</td>
           <td class="muted">${c.travel_date || '—'}</td>
+          <td>${lead}</td>
           <td>${crm}</td>
         </tr>`;
     }).join('');
   } catch (e) {
     console.error('Calls load failed', e);
-    document.getElementById('call-log').innerHTML = '<tr><td colspan="9" class="loading">Failed to load</td></tr>';
+    document.getElementById('call-log').innerHTML = '<tr><td colspan="10" class="loading">Failed to load</td></tr>';
   }
 }
 
