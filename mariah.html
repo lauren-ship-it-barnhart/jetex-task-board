@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mariah AI Call Analytics | JetEx</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e2e4ea;
+    --muted: #7a7f8e;
+    --accent: #6c8cff;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --red: #f87171;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --cyan: #60d5fa;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+  }
+  header h1 span { color: var(--accent); }
+  .header-left { display: flex; flex-direction: column; gap: 12px; }
+  .top-nav { display: flex; gap: 8px; flex-wrap: wrap; }
+  .top-nav a {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 12px; border-radius: 999px;
+    border: 1px solid var(--border); color: var(--muted);
+    text-decoration: none; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.3px; background: var(--card);
+    transition: all 0.2s;
+  }
+  .top-nav a:hover { color: var(--text); border-color: #3a3d4a; }
+  .top-nav a.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .header-right { text-align: right; }
+  #clock { font-size: 14px; color: var(--muted); line-height: 1.5; }
+  #clock .time { font-size: 20px; color: var(--text); font-weight: 500; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat .num { font-size: 32px; font-weight: 700; }
+  .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+  .stat.accent .num { color: var(--accent); }
+  .stat.green .num { color: var(--green); }
+  .stat.yellow .num { color: var(--yellow); }
+  .stat.purple .num { color: var(--purple); }
+  .stat.cyan .num { color: var(--cyan); }
+  .stat.orange .num { color: var(--orange); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .panel h2 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+  .panel h2 span.count { color: var(--accent); margin-left: 6px; }
+
+  .bar-chart { display: flex; flex-direction: column; gap: 10px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+  .bar-label { flex: 0 0 140px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar-track { flex: 1; height: 20px; background: #0b0d14; border-radius: 4px; position: relative; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--cyan)); border-radius: 4px; transition: width 0.4s; }
+  .bar-value { flex: 0 0 50px; text-align: right; color: var(--muted); font-size: 12px; font-weight: 600; }
+
+  .timeline { display: flex; align-items: flex-end; gap: 4px; height: 120px; padding: 8px 0; }
+  .timeline-bar {
+    flex: 1;
+    background: linear-gradient(180deg, var(--accent), #3c5aa8);
+    border-radius: 3px 3px 0 0;
+    min-height: 4px;
+    position: relative;
+  }
+  .timeline-bar:hover::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #000;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    margin-bottom: 4px;
+  }
+  .timeline-labels { display: flex; gap: 4px; font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .timeline-labels > div { flex: 1; text-align: center; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  td { color: var(--text); }
+  td.muted { color: var(--muted); font-size: 12px; }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .badge.green { background: rgba(74,222,128,0.15); color: var(--green); }
+  .badge.red { background: rgba(248,113,113,0.15); color: var(--red); }
+  .badge.accent { background: rgba(108,140,255,0.15); color: var(--accent); }
+
+  .route { font-family: 'SF Mono', Monaco, monospace; font-size: 12px; color: var(--cyan); }
+
+  .loading { text-align: center; padding: 40px; color: var(--muted); }
+
+  tr.clickable { cursor: pointer; transition: background 0.15s; }
+  tr.clickable:hover { background: rgba(108, 140, 255, 0.08); }
+
+  .modal-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    align-items: center; justify-content: center;
+    z-index: 1000;
+    padding: 24px;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 720px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px;
+  }
+  .modal h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .modal .modal-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .modal-section {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-section:last-child { border-bottom: none; margin-bottom: 0; }
+  .modal-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+  .modal-grid {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 10px 16px;
+    font-size: 13px;
+  }
+  .modal-grid dt { color: var(--muted); }
+  .modal-grid dd { color: var(--text); word-break: break-word; }
+  .modal-grid dd a { color: var(--accent); text-decoration: none; }
+  .modal-grid dd a:hover { text-decoration: underline; }
+  .modal-actions {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 600;
+    text-decoration: none; cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.1); color: #fff; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .modal-close {
+    float: right;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+  }
+  .modal-close:hover { color: var(--text); }
+  .transcript-box {
+    background: #0b0d14;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+    font-family: 'SF Mono', Monaco, monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text);
+    white-space: pre-wrap;
+    max-height: 300px;
+    overflow-y: auto;
+  }
+  .transcript-empty {
+    color: var(--muted);
+    font-style: italic;
+    text-align: center;
+    padding: 24px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1><span>JetEx</span> Mariah AI Analytics</h1>
+    <nav class="top-nav">
+      <a href="./index.html">Task Board</a>
+      <a href="./projects.html">Projects</a>
+      <a href="./plan.html">30/60/90 Plan</a>
+      <a class="active" href="./mariah.html">Mariah Calls</a>
+      <a href="./api-endpoints.html">API Endpoints</a>
+    </nav>
+  </div>
+  <div class="header-right">
+    <div id="clock"></div>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="stat accent"><div class="num" id="stat-total">—</div><div class="label">Total Calls</div></div>
+  <div class="stat cyan"><div class="num" id="stat-7d">—</div><div class="label">Last 7 Days</div></div>
+  <div class="stat purple"><div class="num" id="stat-callers">—</div><div class="label">Unique Callers</div></div>
+  <div class="stat yellow"><div class="num" id="stat-companies">—</div><div class="label">Companies</div></div>
+  <div class="stat green"><div class="num" id="stat-crm">—</div><div class="label">In CRM</div></div>
+  <div class="stat orange"><div class="num" id="stat-leads">—</div><div class="label">New Leads</div></div>
+</div>
+
+<div class="panel" style="margin-bottom: 16px;">
+  <h2>Calls per Day (Last 30 Days)</h2>
+  <div class="timeline" id="timeline"></div>
+  <div class="timeline-labels" id="timeline-labels"></div>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <h2>Top Callers <span class="count" id="callers-count"></span></h2>
+    <div id="top-callers" class="bar-chart"><div class="loading">Loading…</div></div>
+  </div>
+  <div class="panel">
+    <h2>Top Companies</h2>
+    <div id="top-companies" class="bar-chart"><div class="loading">Loading…</div></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="panel">
+    <h2>Top Routes</h2>
+    <div id="top-routes" class="bar-chart"><div class="loading">Loading…</div></div>
+  </div>
+  <div class="panel">
+    <h2>Calls by Hour (ET)</h2>
+    <div class="timeline" id="hour-chart"></div>
+    <div class="timeline-labels" id="hour-labels"></div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Recent Calls <span class="count" id="log-count"></span></h2>
+  <div style="overflow-x: auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Received</th>
+          <th>Caller</th>
+          <th>Phone</th>
+          <th>Company</th>
+          <th>Route</th>
+          <th>Type</th>
+          <th>Pax</th>
+          <th>Travel Date</th>
+          <th>CRM</th>
+        </tr>
+      </thead>
+      <tbody id="call-log">
+        <tr><td colspan="9" class="loading">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" id="modal">
+    <button class="modal-close" onclick="closeModal()">×</button>
+    <h2 id="modal-caller">—</h2>
+    <div class="modal-sub" id="modal-sub">—</div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Contact</div>
+      <dl class="modal-grid">
+        <dt>Phone</dt><dd id="m-phone">—</dd>
+        <dt>Email</dt><dd id="m-email">—</dd>
+        <dt>Company</dt><dd id="m-company">—</dd>
+        <dt>CRM Status</dt><dd id="m-crm">—</dd>
+      </dl>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Trip Request</div>
+      <dl class="modal-grid">
+        <dt>Route</dt><dd id="m-route">—</dd>
+        <dt>Trip Type</dt><dd id="m-type">—</dd>
+        <dt>Travel Date</dt><dd id="m-date">—</dd>
+        <dt>Departure Time</dt><dd id="m-deptime">—</dd>
+        <dt>Passengers</dt><dd id="m-pax">—</dd>
+      </dl>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Call Record</div>
+      <dl class="modal-grid">
+        <dt>Received</dt><dd id="m-received">—</dd>
+        <dt>Call SID</dt><dd id="m-sid">—</dd>
+      </dl>
+      <div class="modal-actions">
+        <a id="m-email-link" class="btn" target="_blank" rel="noopener">📧 Open Email</a>
+        <a id="m-twilio-link" class="btn" target="_blank" rel="noopener">📞 Twilio Call Log</a>
+        <a id="m-call-back" class="btn primary">☎️ Call Back</a>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Transcript</div>
+      <div id="m-transcript" class="transcript-box transcript-empty">
+        No transcript available. Transcripts will appear here once Twilio Voice Intelligence is wired up to Mariah.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = 'https://task-board-api-733342202720.us-east1.run.app';
+const TWILIO_ACCOUNT_SID = ''; // Fill in when ready to link to Twilio console
+let currentCalls = [];
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').innerHTML =
+    `<div class="time">${now.toLocaleTimeString('en-US', {hour: 'numeric', minute: '2-digit'})}</div>` +
+    `<div>${now.toLocaleDateString('en-US', {weekday: 'long', month: 'long', day: 'numeric'})}</div>`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function formatDateTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
+function renderBars(containerId, items, labelKey, valueKey, extraFn) {
+  const c = document.getElementById(containerId);
+  if (!items || items.length === 0) {
+    c.innerHTML = '<div class="loading">No data yet</div>';
+    return;
+  }
+  const max = Math.max(...items.map(i => i[valueKey]));
+  c.innerHTML = items.map(item => {
+    const pct = (item[valueKey] / max) * 100;
+    const label = item[labelKey] || '(unknown)';
+    const extra = extraFn ? extraFn(item) : '';
+    return `
+      <div class="bar-row">
+        <div class="bar-label" title="${label}">${label}${extra}</div>
+        <div class="bar-track"><div class="bar-fill" style="width: ${pct}%"></div></div>
+        <div class="bar-value">${item[valueKey]}</div>
+      </div>`;
+  }).join('');
+}
+
+async function loadStats() {
+  try {
+    const resp = await fetch(API_URL + '/mariah/stats');
+    const data = await resp.json();
+
+    // Top stats
+    document.getElementById('stat-total').textContent = data.total_calls || 0;
+    document.getElementById('stat-7d').textContent = data.last_7d || 0;
+    document.getElementById('stat-callers').textContent = data.unique_callers || 0;
+    document.getElementById('stat-companies').textContent = data.unique_companies || 0;
+    document.getElementById('stat-crm').textContent = data.in_crm_count || 0;
+    document.getElementById('stat-leads').textContent = data.new_leads || 0;
+
+    // Daily timeline
+    const timeline = document.getElementById('timeline');
+    const labels = document.getElementById('timeline-labels');
+    if (data.by_day && data.by_day.length > 0) {
+      const maxDay = Math.max(...data.by_day.map(d => d.calls));
+      // Fill gaps to show a full 30 days
+      const today = new Date();
+      const dayMap = {};
+      data.by_day.forEach(d => { dayMap[d.d] = d.calls; });
+      const days = [];
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const key = d.toISOString().split('T')[0];
+        days.push({ d: key, calls: dayMap[key] || 0 });
+      }
+      timeline.innerHTML = days.map(d => {
+        const pct = maxDay > 0 ? (d.calls / maxDay) * 100 : 0;
+        return `<div class="timeline-bar" style="height: ${pct}%" data-label="${d.d}: ${d.calls} calls"></div>`;
+      }).join('');
+      labels.innerHTML = days.filter((_,i) => i % 5 === 0).map(d => {
+        const dt = new Date(d.d);
+        return `<div>${dt.getMonth()+1}/${dt.getDate()}</div>`;
+      }).join('');
+    } else {
+      timeline.innerHTML = '<div class="loading" style="width:100%">No calls in last 30 days</div>';
+    }
+
+    // Hourly chart
+    const hourChart = document.getElementById('hour-chart');
+    const hourLabels = document.getElementById('hour-labels');
+    const hourMap = {};
+    (data.by_hour || []).forEach(h => { hourMap[h.hour] = h.calls; });
+    const hours = [];
+    for (let h = 0; h < 24; h++) hours.push({ hour: h, calls: hourMap[h] || 0 });
+    const maxHour = Math.max(...hours.map(h => h.calls), 1);
+    hourChart.innerHTML = hours.map(h =>
+      `<div class="timeline-bar" style="height: ${(h.calls/maxHour)*100}%" data-label="${h.hour}:00 - ${h.calls} calls"></div>`
+    ).join('');
+    hourLabels.innerHTML = [0,6,12,18,23].map(h => `<div>${h}:00</div>`).join('');
+
+    // Top callers
+    document.getElementById('callers-count').textContent = data.top_callers?.length || 0;
+    renderBars('top-callers', data.top_callers, 'name', 'calls',
+      item => item.company ? ` <span style="color:var(--muted); font-size:11px">· ${item.company}</span>` : '');
+
+    // Top companies
+    renderBars('top-companies', data.top_companies, 'company', 'calls');
+
+    // Top routes
+    renderBars('top-routes', data.top_routes, 'route', 'calls');
+
+  } catch (e) {
+    console.error('Stats load failed', e);
+  }
+}
+
+async function loadCalls() {
+  try {
+    const resp = await fetch(API_URL + '/mariah/calls');
+    const data = await resp.json();
+    document.getElementById('log-count').textContent = data.count || 0;
+    currentCalls = data.calls || [];
+
+    const tbody = document.getElementById('call-log');
+    if (currentCalls.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" class="loading">No calls yet</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = currentCalls.map((c, i) => {
+      const route = (c.departure && c.destination)
+        ? `<span class="route">${c.departure} → ${c.destination}</span>`
+        : '<span class="muted">—</span>';
+      const crm = c.in_crm
+        ? '<span class="badge green">In CRM</span>'
+        : '<span class="badge red">New</span>';
+      return `
+        <tr class="clickable" onclick="openModal(${i})">
+          <td class="muted">${formatDateTime(c.received_at)}</td>
+          <td>${c.caller_name || '—'}</td>
+          <td class="muted">${c.phone || '—'}</td>
+          <td>${c.company || '<span class="muted">—</span>'}</td>
+          <td>${route}</td>
+          <td class="muted">${c.trip_type || '—'}</td>
+          <td class="muted">${c.passengers || '—'}</td>
+          <td class="muted">${c.travel_date || '—'}</td>
+          <td>${crm}</td>
+        </tr>`;
+    }).join('');
+  } catch (e) {
+    console.error('Calls load failed', e);
+    document.getElementById('call-log').innerHTML = '<tr><td colspan="9" class="loading">Failed to load</td></tr>';
+  }
+}
+
+function openModal(idx) {
+  const c = currentCalls[idx];
+  if (!c) return;
+
+  const set = (id, v) => { document.getElementById(id).textContent = v || '—'; };
+
+  set('modal-caller', c.caller_name || 'Unknown Caller');
+  set('modal-sub', `${c.company ? c.company + ' · ' : ''}${formatDateTime(c.received_at)}`);
+
+  set('m-phone', c.phone);
+  set('m-email', c.email);
+  set('m-company', c.company);
+  const crmEl = document.getElementById('m-crm');
+  crmEl.innerHTML = c.in_crm
+    ? '<span class="badge green">In CRM</span>'
+    : '<span class="badge red">New Lead</span>';
+
+  set('m-route', (c.departure && c.destination) ? `${c.departure} → ${c.destination}` : '');
+  set('m-type', c.trip_type);
+  set('m-date', c.travel_date);
+  set('m-deptime', c.departure_time);
+  set('m-pax', c.passengers);
+
+  set('m-received', formatDateTime(c.received_at));
+  set('m-sid', c.call_sid || '(not linked yet)');
+
+  // Email link
+  const emailLink = document.getElementById('m-email-link');
+  if (c.web_link) {
+    emailLink.href = c.web_link;
+    emailLink.style.display = '';
+  } else {
+    emailLink.style.display = 'none';
+  }
+
+  // Twilio link
+  const twilioLink = document.getElementById('m-twilio-link');
+  if (c.call_sid && TWILIO_ACCOUNT_SID) {
+    twilioLink.href = `https://console.twilio.com/us1/monitor/logs/calls/${TWILIO_ACCOUNT_SID}/${c.call_sid}`;
+    twilioLink.style.display = '';
+  } else {
+    twilioLink.style.display = 'none';
+  }
+
+  // Call back
+  const callBack = document.getElementById('m-call-back');
+  if (c.phone) {
+    callBack.href = `tel:${c.phone}`;
+    callBack.style.display = '';
+  } else {
+    callBack.style.display = 'none';
+  }
+
+  // Transcript
+  const transcriptEl = document.getElementById('m-transcript');
+  if (c.transcript) {
+    transcriptEl.classList.remove('transcript-empty');
+    transcriptEl.textContent = c.transcript;
+  } else {
+    transcriptEl.classList.add('transcript-empty');
+    transcriptEl.textContent = 'No transcript available. Transcripts will appear here once Twilio Voice Intelligence is wired up to Mariah.';
+  }
+
+  document.getElementById('modal-backdrop').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('modal-backdrop').classList.remove('open');
+}
+
+document.getElementById('modal-backdrop').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-backdrop') closeModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') closeModal();
+});
+
+loadStats();
+loadCalls();
+setInterval(() => { loadStats(); loadCalls(); }, 60000);
+</script>
+</body>
+</html>
