@@ -51,6 +51,18 @@ def _normalize_dt(value):
 def _clean_text(value):
     return value.strip() if isinstance(value, str) else value
 
+def _legacy_lead_generated(row):
+    return bool(row.get("raw_subject") or row.get("web_link"))
+
+def _lead_generated(row):
+    explicit = row.get("lead_generated")
+    if isinstance(explicit, bool):
+        return explicit
+    email_sent = row.get("email_sent")
+    if isinstance(email_sent, bool):
+        return email_sent
+    return _legacy_lead_generated(row)
+
 def _serialize_mariah_row(row):
     received_at = _normalize_dt(row.get("received_at"))
     return {
@@ -64,13 +76,22 @@ def _serialize_mariah_row(row):
         "destination": row.get("destination"),
         "trip_type": row.get("trip_type"),
         "travel_date": row.get("travel_date"),
+        "travel_date_iso": row.get("travel_date_iso"),
         "departure_time": row.get("departure_time"),
+        "return_date": row.get("return_date"),
+        "return_date_iso": row.get("return_date_iso"),
         "passengers": row.get("passengers"),
         "in_crm": row.get("in_crm"),
         "raw_subject": row.get("raw_subject"),
         "web_link": row.get("web_link"),
         "call_sid": row.get("call_sid"),
         "transcript": row.get("transcript"),
+        "email_sent": row.get("email_sent"),
+        "email_error": row.get("email_error"),
+        "lead_generated": _lead_generated(row),
+        "call_outcome": row.get("call_outcome"),
+        "hangup_reason": row.get("hangup_reason"),
+        "trip_confirmed": row.get("trip_confirmed"),
     }
 
 def _load_mariah_rows(limit=MARIAH_CALLS_LIMIT):
@@ -239,7 +260,7 @@ def mariah_stats():
 
         if in_crm is True:
             in_crm_count += 1
-        elif in_crm is False:
+        if _lead_generated(row):
             new_leads += 1
 
         if not received_at:

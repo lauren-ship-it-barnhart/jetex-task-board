@@ -369,8 +369,10 @@
         <dt>Route</dt><dd id="m-route">—</dd>
         <dt>Trip Type</dt><dd id="m-type">—</dd>
         <dt>Travel Date</dt><dd id="m-date">—</dd>
+        <dt>Return Date</dt><dd id="m-return-date">—</dd>
         <dt>Departure Time</dt><dd id="m-deptime">—</dd>
         <dt>Passengers</dt><dd id="m-pax">—</dd>
+        <dt>Confirmed</dt><dd id="m-confirmed">—</dd>
       </dl>
     </div>
 
@@ -379,6 +381,10 @@
       <dl class="modal-grid">
         <dt>Received</dt><dd id="m-received">—</dd>
         <dt>Call SID</dt><dd id="m-sid">—</dd>
+        <dt>Lead Status</dt><dd id="m-lead">—</dd>
+        <dt>Outcome</dt><dd id="m-outcome">—</dd>
+        <dt>Hangup</dt><dd id="m-hangup">—</dd>
+        <dt>Email Error</dt><dd id="m-email-error">—</dd>
       </dl>
       <div class="modal-actions">
         <a id="m-email-link" class="btn" target="_blank" rel="noopener">📧 Open Email</a>
@@ -418,7 +424,14 @@ function formatDateTime(iso) {
 }
 
 function isLeadGenerated(call) {
+  if (typeof call?.lead_generated === 'boolean') return call.lead_generated;
+  if (typeof call?.email_sent === 'boolean') return call.email_sent;
   return Boolean(call?.raw_subject || call?.web_link);
+}
+
+function formatOutcome(value) {
+  if (!value) return '—';
+  return value.replaceAll('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function renderBars(containerId, items, labelKey, valueKey, extraFn) {
@@ -574,11 +587,19 @@ function openModal(idx) {
   set('m-route', (c.departure && c.destination) ? `${c.departure} → ${c.destination}` : '');
   set('m-type', c.trip_type);
   set('m-date', c.travel_date);
+  set('m-return-date', c.return_date);
   set('m-deptime', c.departure_time);
   set('m-pax', c.passengers);
+  set('m-confirmed', c.trip_confirmed === true ? 'Yes' : c.trip_confirmed === false ? 'No' : '—');
 
   set('m-received', formatDateTime(c.received_at));
   set('m-sid', c.call_sid || '(not linked yet)');
+  document.getElementById('m-lead').innerHTML = isLeadGenerated(c)
+    ? '<span class="badge accent">Sent</span>'
+    : '<span class="badge red">No</span>';
+  set('m-outcome', formatOutcome(c.call_outcome));
+  set('m-hangup', formatOutcome(c.hangup_reason));
+  set('m-email-error', c.email_error || '—');
 
   // Email link
   const emailLink = document.getElementById('m-email-link');
