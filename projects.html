@@ -186,6 +186,21 @@
   .dot-iterating { background: var(--blue); }
   .dot-on-hold { background: #6b7280; }
 
+  /* Quick links */
+  .quick-links {
+    display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .quick-link {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 18px; border-radius: 10px;
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text); text-decoration: none; font-size: 13px;
+    font-weight: 600; transition: all 0.2s;
+  }
+  .quick-link:hover { border-color: var(--accent); color: var(--accent); }
+  .quick-link .ql-icon { font-size: 16px; }
+  .quick-link .ql-label { color: var(--muted); font-weight: 400; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+
   @media (max-width: 900px) {
     .board { grid-template-columns: 1fr; }
     .stats { flex-wrap: wrap; }
@@ -217,6 +232,17 @@
   <div class="stat"><div class="num" style="color: var(--blue);" id="stat-iterating">0</div><div class="label">Iterating</div></div>
   <div class="stat"><div class="num" style="color: var(--muted);" id="stat-planned">0</div><div class="label">Planned</div></div>
   <div class="stat"><div class="num" style="color: var(--accent);" id="stat-total">0</div><div class="label">Total</div></div>
+</div>
+
+<div class="quick-links">
+  <a class="quick-link" href="https://crew-duty-tracker-staging-xrvzgpjfca-ue.a.run.app/" target="_blank">
+    <span class="ql-icon">&#9201;</span>
+    <span>Crew Duty Tracker</span>
+  </a>
+  <a class="quick-link" href="https://sales-scheduler-c3iwkxbkbq-ue.a.run.app" target="_blank">
+    <span class="ql-icon">&#128197;</span>
+    <span>Sales Schedule</span>
+  </a>
 </div>
 
 <div class="view-tabs">
@@ -556,6 +582,19 @@ const PROJECTS = [
     nextAction: "Evaluate Zapier connector for scorecard sync",
     blockers: "",
     deployUrl: "",
+    shipDate: "",
+    startDate: ""
+  },
+  {
+    name: "Sales Scheduler",
+    status: "In Progress",
+    priority: "Medium",
+    phase: "Build",
+    category: ["Sales"],
+    description: "Sales scheduling application deployed on Cloud Run.",
+    nextAction: "",
+    blockers: "",
+    deployUrl: "https://sales-scheduler-c3iwkxbkbq-ue.a.run.app",
     shipDate: "",
     startDate: ""
   }
