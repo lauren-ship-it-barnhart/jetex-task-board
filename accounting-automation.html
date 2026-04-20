@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JetEx Accounting Automation Roadmap</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e2e4ea;
+    --muted: #7a7f8e;
+    --accent: #6c8cff;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --red: #f87171;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --cyan: #60d5fa;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 24px;
+  }
+  .header-left { display: flex; flex-direction: column; gap: 12px; }
+  header h1 {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.5px;
+  }
+  header h1 span { color: var(--accent); }
+  .subtitle {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.55;
+    max-width: 940px;
+  }
+  .top-nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .top-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    background: var(--card);
+    transition: all 0.2s;
+  }
+  .top-nav a:hover { color: var(--text); border-color: #3a3d4a; }
+  .top-nav a.active {
+    color: #fff;
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .header-right { text-align: right; }
+  #clock { font-size: 14px; color: var(--muted); line-height: 1.5; }
+  #clock .time { font-size: 20px; color: var(--text); font-weight: 500; }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .summary-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .summary-card .num {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .summary-card .label {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .summary-card.total .num { color: var(--accent); }
+  .summary-card.inflight .num { color: var(--yellow); }
+  .summary-card.queued .num { color: var(--orange); }
+  .summary-card.blocked .num { color: var(--red); }
+  .summary-card.done .num { color: var(--green); }
+
+  .goal-band {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .goal-card, .phase-summary {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .goal-card h2, .phase-summary h2 {
+    font-size: 18px;
+    margin-bottom: 10px;
+  }
+  .goal-list, .phase-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .goal-item, .phase-item {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .goal-item strong, .phase-item strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+  .goal-item span, .phase-item span {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .section-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    margin: 28px 0 14px;
+  }
+  .section-title h2 {
+    font-size: 18px;
+  }
+  .section-title p {
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .roadmap-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .phase-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .phase-card h3 {
+    font-size: 18px;
+    margin-bottom: 6px;
+  }
+  .phase-card .phase-window {
+    color: var(--cyan);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    margin-bottom: 10px;
+  }
+  .phase-card p {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .phase-chip-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .chip-active { background: rgba(250, 204, 21, 0.14); color: var(--yellow); }
+  .chip-queued { background: rgba(251, 146, 60, 0.14); color: var(--orange); }
+  .chip-blocked { background: rgba(248, 113, 113, 0.14); color: var(--red); }
+  .chip-done { background: rgba(74, 222, 128, 0.14); color: var(--green); }
+  .phase-task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .phase-task {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .phase-task .task-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+  .phase-task .task-title {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .phase-task .task-note {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .tracker-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 8px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+
+  .tracker-wrap {
+    width: 100%;
+    overflow-x: auto;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1080px;
+  }
+  th {
+    text-align: left;
+    padding: 12px 14px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    white-space: nowrap;
+  }
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(108, 140, 255, 0.04); }
+  .cell-main {
+    font-weight: 600;
+    min-width: 180px;
+  }
+  .cell-sub {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+    margin-top: 4px;
+  }
+  .status-pill, .phase-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  .status-active { background: rgba(250, 204, 21, 0.14); color: var(--yellow); }
+  .status-queued { background: rgba(251, 146, 60, 0.14); color: var(--orange); }
+  .status-blocked { background: rgba(248, 113, 113, 0.14); color: var(--red); }
+  .status-done { background: rgba(74, 222, 128, 0.14); color: var(--green); }
+  .phase-pill { background: #1a2a3a; color: var(--cyan); }
+
+  .dependency-list, .deliverable-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .dependency-list span, .deliverable-list span {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 1150px) {
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .goal-band { grid-template-columns: 1fr; }
+    .roadmap-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 760px) {
+    body { padding: 16px; }
+    header { flex-direction: column; }
+    .summary-grid { grid-template-columns: 1fr; }
+    .roadmap-grid { grid-template-columns: 1fr; }
+    .header-right { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1><span>JetEx</span> Accounting Automation</h1>
+    <div class="top-nav">
+      <a href="./index.html">Task Board</a>
+      <a href="./projects.html">Projects</a>
+      <a class="active" href="./accounting-automation.html">Accounting Roadmap</a>
+      <a href="./plan.html">30/60/90 Plan</a>
+      <a href="./mariah.html">Mariah Calls</a>
+      <a href="./api-endpoints.html">API Endpoints</a>
+    </div>
+    <p class="subtitle">
+      Execution roadmap for daily P&amp;L, close within 5 business days, fuel and card reconciliation,
+      bank exception handling, payroll outputs, Intacct purchasing, and the Veryon to Intacct bridge.
+    </p>
+  </div>
+  <div class="header-right">
+    <div id="clock"></div>
+  </div>
+</header>
+
+<section class="summary-grid">
+  <div class="summary-card total">
+    <div class="num" id="total-workstreams">0</div>
+    <div class="label">Workstreams</div>
+  </div>
+  <div class="summary-card inflight">
+    <div class="num" id="active-items">0</div>
+    <div class="label">In Flight</div>
+  </div>
+  <div class="summary-card queued">
+    <div class="num" id="queued-items">0</div>
+    <div class="label">Queued</div>
+  </div>
+  <div class="summary-card blocked">
+    <div class="num" id="blocked-items">0</div>
+    <div class="label">Blocked</div>
+  </div>
+  <div class="summary-card done">
+    <div class="num" id="done-items">0</div>
+    <div class="label">Completed</div>
+  </div>
+</section>
+
+<section class="goal-band">
+  <div class="goal-card">
+    <h2>Program Outcomes</h2>
+    <div class="goal-list">
+      <div class="goal-item">
+        <strong>Daily P&amp;L / “Win the Day”</strong>
+        <span>Morning flash P&amp;L with revenue, fuel, variable labor, and major fixed expense visibility.</span>
+      </div>
+      <div class="goal-item">
+        <strong>Close Within 5 Business Days</strong>
+        <span>Convert close work from manual hunting to exception review across fuel, cards, bank activity, and payroll outputs.</span>
+      </div>
+      <div class="goal-item">
+        <strong>Earlier Source Capture</strong>
+        <span>Bring purchases, invoices, and maintenance cost signals into finance closer to the time they occur.</span>
+      </div>
+    </div>
+  </div>
+  <div class="phase-summary">
+    <h2>Execution Sequence</h2>
+    <div class="phase-list">
+      <div class="phase-item">
+        <strong>Phase 0</strong>
+        <span>Source-of-truth rules, dimensions, owners, and exception queues.</span>
+      </div>
+      <div class="phase-item">
+        <strong>Phase 1</strong>
+        <span>Stabilize Fyle, card feeds, and bank data; define the fuel model.</span>
+      </div>
+      <div class="phase-item">
+        <strong>Phase 2</strong>
+        <span>Launch daily fuel, card, and bank exception pipelines.</span>
+      </div>
+      <div class="phase-item">
+        <strong>Phase 3</strong>
+        <span>Deliver payroll outputs, charge payoff support, owner reports, and daily flash P&amp;L.</span>
+      </div>
+      <div class="phase-item">
+        <strong>Phase 4</strong>
+        <span>Move upstream into Intacct Purchasing, AP automation, and Veryon integration.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="section-title">
+  <h2>Roadmap by Phase</h2>
+  <p>Each phase groups the work that has to land together for the finance workflow to improve without breaking control.</p>
+</div>
+
+<section class="roadmap-grid" id="roadmap-grid"></section>
+
+<div class="section-title" id="tracker">
+  <h2>Execution Tracker</h2>
+  <div class="tracker-actions">
+    <button class="filter-btn active" onclick="setFilter('all')">All</button>
+    <button class="filter-btn" onclick="setFilter('active')">Active</button>
+    <button class="filter-btn" onclick="setFilter('queued')">Queued</button>
+    <button class="filter-btn" onclick="setFilter('blocked')">Blocked</button>
+    <button class="filter-btn" onclick="setFilter('done')">Done</button>
+  </div>
+</div>
+
+<div class="tracker-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Workstream / Task</th>
+        <th>Phase</th>
+        <th>Status</th>
+        <th>Owner</th>
+        <th>Timing</th>
+        <th>Dependencies</th>
+        <th>Deliverable</th>
+      </tr>
+    </thead>
+    <tbody id="tracker-body"></tbody>
+  </table>
+</div>
+
+<script>
+const roadmapPhases = [
+  {
+    label: 'Phase 0',
+    window: 'Weeks 1-2',
+    summary: 'Lock the finance control model before any automation starts writing or classifying transactions.',
+    chips: ['2 active', '3 queued'],
+    items: [
+      { title: 'Source-of-truth matrix', note: 'Define which system owns each transaction type and where exceptions route.' , status: 'active'},
+      { title: 'Dimension standard', note: 'Tail, department, vendor, trip, work order, and location rules agreed.' , status: 'active'},
+      { title: 'Close-step inventory', note: 'Document current month-end process and handoffs.' , status: 'queued'}
+    ]
+  },
+  {
+    label: 'Phase 1',
+    window: 'Weeks 2-4',
+    summary: 'Stabilize current tools first: Fyle, card feeds, bank data quality, and fuel contract reference data.',
+    chips: ['3 active', '2 queued'],
+    items: [
+      { title: 'Fyle audit', note: 'Confirm direct feeds, receipt capture, dimensions, sync schedule, and excluded cards.', status: 'active' },
+      { title: 'Card inventory', note: 'Map AMEX, Cap One, pilot cards, and any intentionally excluded accounts.', status: 'active' },
+      { title: 'Fuel contract table', note: 'Identify owner and canonical source for current contract pricing.', status: 'queued' }
+    ]
+  },
+  {
+    label: 'Phase 2',
+    window: 'Weeks 4-8',
+    summary: 'Stand up the daily exception pipelines that remove the largest reconciliation bottlenecks.',
+    chips: ['4 queued', '1 blocked'],
+    items: [
+      { title: 'Fuel source of truth', note: 'Daily invoice intake + contract-vs-actual exception engine for Steve.', status: 'queued' },
+      { title: 'Card reconciliation', note: 'AMEX and Cap workflow matched against Fyle, payables, and fuel records.', status: 'queued' },
+      { title: 'Bank exception layer', note: 'Daily expense/revenue matching with A/R cash application hints.', status: 'blocked' }
+    ]
+  },
+  {
+    label: 'Phase 3',
+    window: 'Weeks 7-10',
+    summary: 'Use the stabilized finance data model to ship the outputs Bratton and accounting actually need.',
+    chips: ['3 queued'],
+    items: [
+      { title: 'Payroll outputs', note: 'Monthly flight bonus, annual bonus, and EFD/training files on schedule.', status: 'queued' },
+      { title: 'Charge payoff support', note: 'Apply card payments to line-item activity for Cap 1, Cap 2, and AMEX.', status: 'queued' },
+      { title: 'Daily flash P&L', note: 'V1 report with freshness markers and owner-review workflow.', status: 'queued' }
+    ]
+  }
+];
+
+const trackerItems = [
+  {
+    workstream: 'Finance Control Model',
+    task: 'Create source-of-truth matrix',
+    detail: 'Assign system of record and exception owner for fuel, cards, bank, payroll, and maintenance purchases.',
+    phase: 'Phase 0',
+    status: 'active',
+    owner: 'Lauren + Bratton',
+    timing: 'Days 1-7',
+    dependencies: ['None'],
+    deliverable: 'Approved source-of-truth matrix'
+  },
+  {
+    workstream: 'Finance Control Model',
+    task: 'Lock required Intacct dimensions',
+    detail: 'Tail, department, vendor, trip, location, and work order standards.',
+    phase: 'Phase 0',
+    status: 'active',
+    owner: 'Lauren + Accounting',
+    timing: 'Days 1-10',
+    dependencies: ['Source-of-truth matrix'],
+    deliverable: 'Dimension standard and mapping rules'
+  },
+  {
+    workstream: 'Fyle & Cards',
+    task: 'Audit Fyle configuration and feed coverage',
+    detail: 'Review AMEX, Capital One, OCR, export mappings, approval flows, and attachment behavior.',
+    phase: 'Phase 1',
+    status: 'active',
+    owner: 'Accounting + Lauren',
+    timing: 'Days 1-15',
+    dependencies: ['Dimension standard'],
+    deliverable: 'Fyle remediation checklist'
+  },
+  {
+    workstream: 'Fyle & Cards',
+    task: 'Inventory all active cards',
+    detail: 'Classify connected, excluded, pilot, and fuel-heavy cards.',
+    phase: 'Phase 1',
+    status: 'active',
+    owner: 'Accounting',
+    timing: 'Days 1-12',
+    dependencies: ['None'],
+    deliverable: 'Card inventory by owner and feed path'
+  },
+  {
+    workstream: 'Fuel Recon',
+    task: 'Define canonical fuel contract price source',
+    detail: 'Identify owner, refresh cadence, and structured ingest format.',
+    phase: 'Phase 1',
+    status: 'queued',
+    owner: 'Lauren + Steve G.',
+    timing: 'Days 8-18',
+    dependencies: ['Source-of-truth matrix'],
+    deliverable: 'Fuel contract reference table spec'
+  },
+  {
+    workstream: 'Fuel Recon',
+    task: 'Build fuel source-of-truth pipeline',
+    detail: 'Daily payables/Fyle fuel intake with gallons, unit cost, vendor, tail, and exception class.',
+    phase: 'Phase 2',
+    status: 'queued',
+    owner: 'Chaz + Accounting',
+    timing: 'Days 16-35',
+    dependencies: ['Fuel contract source', 'Fyle audit'],
+    deliverable: 'Fuel purchase fact table'
+  },
+  {
+    workstream: 'Fuel Recon',
+    task: 'Launch contract-vs-actual alerting',
+    detail: 'Notify Steve when invoice price exceeds contract expectations or key data is missing.',
+    phase: 'Phase 2',
+    status: 'queued',
+    owner: 'Chaz + Steve G.',
+    timing: 'Days 28-40',
+    dependencies: ['Fuel source-of-truth pipeline'],
+    deliverable: 'Daily fuel exception report'
+  },
+  {
+    workstream: 'Card Reconciliation',
+    task: 'Build normalized card transaction table',
+    detail: 'Unify AMEX, Cap One, and select pilot-card activity.',
+    phase: 'Phase 2',
+    status: 'queued',
+    owner: 'Data Engineering',
+    timing: 'Days 16-28',
+    dependencies: ['Card inventory', 'Fyle audit'],
+    deliverable: 'Daily normalized card table'
+  },
+  {
+    workstream: 'Card Reconciliation',
+    task: 'Match card activity to support docs',
+    detail: 'Fyle receipts, payables inbox docs, and fuel records compared daily.',
+    phase: 'Phase 2',
+    status: 'queued',
+    owner: 'Accounting + Data Engineering',
+    timing: 'Days 24-40',
+    dependencies: ['Normalized card table', 'Fuel source-of-truth'],
+    deliverable: 'AMEX / Cap exception queue'
+  },
+  {
+    workstream: 'Bank Reconciliation',
+    task: 'Audit bank export/API quality',
+    detail: 'Assess Truist and First Citizens transaction detail and usable memo fields.',
+    phase: 'Phase 1',
+    status: 'blocked',
+    owner: 'Accounting + Bank Ops',
+    timing: 'Days 5-20',
+    dependencies: ['Bank access'],
+    deliverable: 'Bank feed capability assessment'
+  },
+  {
+    workstream: 'Bank Reconciliation',
+    task: 'Build daily bank exception workflow',
+    detail: 'Expense-side A/P matching, revenue-side trip/invoice suggestions, and A/R cash application hints.',
+    phase: 'Phase 2',
+    status: 'queued',
+    owner: 'Accounting + Data Engineering',
+    timing: 'Days 24-45',
+    dependencies: ['Bank feed assessment', 'Source-of-truth matrix'],
+    deliverable: 'Daily bank exception output'
+  },
+  {
+    workstream: 'Payroll Outputs',
+    task: 'Define monthly and annual bonus formulas',
+    detail: 'Lock exact rules for flight bonus, annual bonus, EFDs, and training days.',
+    phase: 'Phase 3',
+    status: 'queued',
+    owner: 'Accounting + Ops',
+    timing: 'Days 18-30',
+    dependencies: ['JetInsight data availability'],
+    deliverable: 'Approved payroll calculation spec'
+  },
+  {
+    workstream: 'Payroll Outputs',
+    task: 'Backfill IOE date in BambooHR',
+    detail: 'Required to support rolling 12-month annual bonus logic.',
+    phase: 'Phase 3',
+    status: 'queued',
+    owner: 'HR + Accounting',
+    timing: 'Days 18-32',
+    dependencies: ['BambooHR field decision'],
+    deliverable: 'IOE date available in HR data'
+  },
+  {
+    workstream: 'Daily Flash P&L',
+    task: 'Define flash P&L v1 model',
+    detail: 'Specify revenue, fuel, pilot pay, fixed pay, and freshness assumptions.',
+    phase: 'Phase 3',
+    status: 'queued',
+    owner: 'Lauren + Bratton',
+    timing: 'Days 35-55',
+    dependencies: ['Fuel, card, and bank outputs'],
+    deliverable: 'Flash P&L data model'
+  },
+  {
+    workstream: 'Owner Reporting',
+    task: 'Standardize owner report format',
+    detail: 'Managed tail P&L shape, cutoffs, and adjustment timing.',
+    phase: 'Phase 3',
+    status: 'queued',
+    owner: 'Accounting',
+    timing: 'Days 40-60',
+    dependencies: ['Flash P&L model'],
+    deliverable: 'Owner reporting template'
+  },
+  {
+    workstream: 'Intacct Purchasing',
+    task: 'Confirm Purchasing module licensing',
+    detail: 'Validate module availability and implementation path with VAR.',
+    phase: 'Phase 4',
+    status: 'queued',
+    owner: 'Lauren + VAR',
+    timing: 'Days 45-65',
+    dependencies: ['VAR scoping call'],
+    deliverable: 'Licensing and fit assessment'
+  },
+  {
+    workstream: 'Intacct Purchasing',
+    task: 'Map future-state PO workflow',
+    detail: 'Requisition, approval, PO, receiving, bill, and payment flow by department.',
+    phase: 'Phase 4',
+    status: 'queued',
+    owner: 'Accounting + Ops + MX',
+    timing: 'Days 50-75',
+    dependencies: ['Purchasing module assessment'],
+    deliverable: 'PO workflow design'
+  },
+  {
+    workstream: 'Veryon Integration',
+    task: 'Scope Veryon to Intacct bridge',
+    detail: 'Prioritize vendor master, tail master, PO, receiving, labor, and parts consumption events.',
+    phase: 'Phase 4',
+    status: 'queued',
+    owner: 'Lauren + Vendor Partner',
+    timing: 'Days 55-80',
+    dependencies: ['Vendor discovery', 'PO workflow design'],
+    deliverable: 'Integration scope and phase plan'
+  },
+  {
+    workstream: 'Program Governance',
+    task: 'Create shared execution tracker',
+    detail: 'Weekly operating cadence, status updates, and blocker log for the 9 workstreams.',
+    phase: 'Phase 0',
+    status: 'done',
+    owner: 'Lauren',
+    timing: 'Day 1',
+    dependencies: ['None'],
+    deliverable: 'Tracker page published'
+  }
+];
+
+let currentFilter = 'all';
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function statusLabel(status) {
+  if (status === 'active') return 'In Flight';
+  if (status === 'queued') return 'Queued';
+  if (status === 'blocked') return 'Blocked';
+  return 'Done';
+}
+
+function renderRoadmap() {
+  const root = document.getElementById('roadmap-grid');
+  root.innerHTML = roadmapPhases.map(phase => `
+    <section class="phase-card">
+      <h3>${escHtml(phase.label)}</h3>
+      <div class="phase-window">${escHtml(phase.window)}</div>
+      <p>${escHtml(phase.summary)}</p>
+      <div class="phase-chip-row">
+        ${phase.chips.map(chip => {
+          const cls = chip.includes('blocked') ? 'chip-blocked'
+            : chip.includes('active') ? 'chip-active'
+            : chip.includes('done') ? 'chip-done'
+            : 'chip-queued';
+          return `<span class="chip ${cls}">${escHtml(chip)}</span>`;
+        }).join('')}
+      </div>
+      <div class="phase-task-list">
+        ${phase.items.map(item => `
+          <div class="phase-task">
+            <div class="task-head">
+              <div class="task-title">${escHtml(item.title)}</div>
+              <span class="status-pill status-${item.status}">${statusLabel(item.status)}</span>
+            </div>
+            <div class="task-note">${escHtml(item.note)}</div>
+          </div>
+        `).join('')}
+      </div>
+    </section>
+  `).join('');
+}
+
+function renderTracker() {
+  const body = document.getElementById('tracker-body');
+  const rows = trackerItems.filter(item => currentFilter === 'all' ? true : item.status === currentFilter);
+  body.innerHTML = rows.map(item => `
+    <tr>
+      <td>
+        <div class="cell-main">${escHtml(item.workstream)} / ${escHtml(item.task)}</div>
+        <div class="cell-sub">${escHtml(item.detail)}</div>
+      </td>
+      <td><span class="phase-pill">${escHtml(item.phase)}</span></td>
+      <td><span class="status-pill status-${item.status}">${statusLabel(item.status)}</span></td>
+      <td>${escHtml(item.owner)}</td>
+      <td>${escHtml(item.timing)}</td>
+      <td><div class="dependency-list">${item.dependencies.map(dep => `<span>${escHtml(dep)}</span>`).join('')}</div></td>
+      <td><div class="deliverable-list"><span>${escHtml(item.deliverable)}</span></div></td>
+    </tr>
+  `).join('');
+}
+
+function updateSummary() {
+  document.getElementById('total-workstreams').textContent = new Set(trackerItems.map(item => item.workstream)).size;
+  document.getElementById('active-items').textContent = trackerItems.filter(item => item.status === 'active').length;
+  document.getElementById('queued-items').textContent = trackerItems.filter(item => item.status === 'queued').length;
+  document.getElementById('blocked-items').textContent = trackerItems.filter(item => item.status === 'blocked').length;
+  document.getElementById('done-items').textContent = trackerItems.filter(item => item.status === 'done').length;
+}
+
+function setFilter(filter) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`[onclick="setFilter('${filter}')"]`).classList.add('active');
+  renderTracker();
+}
+
+function updateClock() {
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const date = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  document.getElementById('clock').innerHTML = `<div class="time">${time}</div>${date}`;
+}
+
+updateSummary();
+renderRoadmap();
+renderTracker();
+updateClock();
+setInterval(updateClock, 30000);
+</script>
+</body>
+</html>
