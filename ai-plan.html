@@ -109,18 +109,45 @@
     background: var(--bg); border: 1px solid var(--border);
     border-radius: 8px; padding: 10px 12px;
     display: flex; align-items: flex-start; gap: 10px;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    user-select: none;
   }
+  .task-item:hover { border-color: #3a3d4a; background: rgba(108,140,255,0.04); }
   .task-item .check {
     flex-shrink: 0; width: 16px; height: 16px; border-radius: 4px;
     border: 1.5px solid var(--border); margin-top: 1px;
     display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
   }
-  .task-item .task-text { font-size: 13px; line-height: 1.45; }
+  .task-item:hover .check { border-color: var(--green); }
+  .task-item.done { border-color: rgba(74,222,128,0.25); background: rgba(74,222,128,0.04); }
+  .task-item.done .check {
+    background: var(--green); border-color: var(--green);
+  }
+  .task-item.done .check::after {
+    content: '';
+    display: block; width: 9px; height: 5px;
+    border-left: 2px solid #0f1117; border-bottom: 2px solid #0f1117;
+    transform: rotate(-45deg) translate(0px, -1px);
+  }
+  .task-item.done .task-text {
+    text-decoration: line-through; color: var(--muted);
+  }
+  .task-item .task-text { font-size: 13px; line-height: 1.45; flex: 1; }
   .task-item .task-owner {
     margin-left: auto; flex-shrink: 0; font-size: 10px; color: var(--muted);
     background: rgba(42,45,58,0.8); padding: 2px 8px; border-radius: 999px;
     white-space: nowrap;
   }
+  .task-item.done .task-owner { opacity: 0.5; }
+
+  .phase-progress {
+    font-size: 11px; color: var(--muted); font-weight: 600;
+    margin-left: auto; white-space: nowrap; padding: 3px 8px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 999px;
+  }
+  .phase-progress.all-done { color: var(--green); border-color: rgba(74,222,128,0.3); background: rgba(74,222,128,0.08); }
 
   .exit-criteria {
     margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
@@ -232,8 +259,8 @@
     <div class="label">Target Skills</div>
   </div>
   <div class="summary-card" style="border-color: rgba(74,222,128,0.3);">
-    <div class="num" style="color: var(--green);">80%</div>
-    <div class="label">Seat Usage Goal (Day 90)</div>
+    <div class="num" style="color: var(--green);" id="stat-tasks-done">0</div>
+    <div class="label">Tasks Complete</div>
   </div>
 </div>
 
@@ -242,13 +269,14 @@
 <div class="phase-grid">
 
   <!-- Phase 0 -->
-  <div class="phase-card">
+  <div class="phase-card" data-phase="0">
     <div class="phase-header">
       <div class="phase-badge">Phase 0 &middot; Week 1</div>
       <div>
         <div class="phase-title">Prerequisites</div>
         <div class="phase-weeks">Foundation before anything else can land</div>
       </div>
+      <span class="phase-progress" data-phase-progress="0"></span>
     </div>
     <p class="phase-desc">Get Claude Team plan live, confirm billing entity, stand up tools-registry, and verify M365 readiness.</p>
     <div class="task-list">
@@ -272,13 +300,14 @@
   </div>
 
   <!-- Phase 1 -->
-  <div class="phase-card">
+  <div class="phase-card" data-phase="1">
     <div class="phase-header">
       <div class="phase-badge yellow">Phase 1 &middot; Weeks 1–2</div>
       <div>
         <div class="phase-title">SharePoint Foundation</div>
         <div class="phase-weeks">Stand up the site structure — don't fill it yet</div>
       </div>
+      <span class="phase-progress" data-phase-progress="1"></span>
     </div>
     <p class="phase-desc">Create the Communication site hub, 7 Team sites, apply metadata schema, and wire Power Automate flows.</p>
     <div class="task-list">
@@ -302,13 +331,14 @@
   </div>
 
   <!-- Phase 2 -->
-  <div class="phase-card">
+  <div class="phase-card" data-phase="2">
     <div class="phase-header">
       <div class="phase-badge orange">Phase 2 &middot; Weeks 2–3</div>
       <div>
         <div class="phase-title">Knowledge Architecture</div>
         <div class="phase-weeks">Decide what goes where before generating content</div>
       </div>
+      <span class="phase-progress" data-phase-progress="2"></span>
     </div>
     <p class="phase-desc">Write the AI Knowledge Architecture doc, finalize taxonomy (Layer 1/2/3), and enable Claude connectors.</p>
     <div class="task-list">
@@ -330,13 +360,14 @@
   </div>
 
   <!-- Phase 3 -->
-  <div class="phase-card">
+  <div class="phase-card" data-phase="3">
     <div class="phase-header">
       <div class="phase-badge purple">Phase 3 &middot; Weeks 3–4</div>
       <div>
         <div class="phase-title">Foundational Skills</div>
         <div class="phase-weeks">The two skills every other skill will reference</div>
       </div>
+      <span class="phase-progress" data-phase-progress="3"></span>
     </div>
     <p class="phase-desc">Build <code>jetex-company-context</code> and <code>aviation-metrics</code>, migrate 3 existing skills, and establish CI pipeline.</p>
     <div class="task-list">
@@ -359,13 +390,14 @@
   </div>
 
   <!-- Phase 4 -->
-  <div class="phase-card">
+  <div class="phase-card" data-phase="4">
     <div class="phase-header">
       <div class="phase-badge cyan">Phase 4 &middot; Weeks 4–6</div>
       <div>
         <div class="phase-title">Content Migration</div>
         <div class="phase-weeks">Populate SharePoint with content people actually reach for</div>
       </div>
+      <span class="phase-progress" data-phase-progress="4"></span>
     </div>
     <p class="phase-desc">Tier 1 first: ops SOPs, dispatcher playbook, quote templates, rate cards, approval matrices, org chart. Draft → review → approve workflow.</p>
     <div class="task-list">
@@ -387,13 +419,14 @@
   </div>
 
   <!-- Phase 5 -->
-  <div class="phase-card">
+  <div class="phase-card" data-phase="5">
     <div class="phase-header">
       <div class="phase-badge green">Phase 5 &middot; Weeks 6–10</div>
       <div>
         <div class="phase-title">Skill Expansion</div>
         <div class="phase-weeks">One skill per week — build what multiplies productivity</div>
       </div>
+      <span class="phase-progress" data-phase-progress="5"></span>
     </div>
     <p class="phase-desc">Technical reference → Financial → Commercial → Compliance → Role assistants. Each skill must pass a quality bar before shipping.</p>
     <div class="task-list">
@@ -418,13 +451,14 @@
   </div>
 
   <!-- Phase 6 -->
-  <div class="phase-card full-width">
+  <div class="phase-card full-width" data-phase="6">
     <div class="phase-header">
       <div class="phase-badge">Phase 6 &middot; Week 4 Onward</div>
       <div>
         <div class="phase-title">Rollout &amp; Adoption</div>
         <div class="phase-weeks">3 onboarding waves · AI Office Hours · feedback loop</div>
       </div>
+      <span class="phase-progress" data-phase-progress="6"></span>
     </div>
     <p class="phase-desc">Drive use without forcing it. Onboard in waves, keep Office Hours running, and triage every "Claude got it wrong" incident into a concrete improvement.</p>
     <div class="task-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
@@ -534,6 +568,54 @@
 </div>
 
 <script>
+const STORAGE_KEY = 'jetex-ai-plan-checks';
+
+function loadState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { return {}; }
+}
+function saveState(state) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function updateCounters() {
+  const allItems = document.querySelectorAll('.task-item');
+  const doneItems = document.querySelectorAll('.task-item.done');
+  const statEl = document.getElementById('stat-tasks-done');
+  if (statEl) statEl.textContent = doneItems.length + ' / ' + allItems.length;
+
+  document.querySelectorAll('.phase-card[data-phase]').forEach(card => {
+    const phase = card.dataset.phase;
+    const items = card.querySelectorAll('.task-item');
+    const done = card.querySelectorAll('.task-item.done');
+    const prog = card.querySelector('[data-phase-progress]');
+    if (!prog) return;
+    prog.textContent = done.length + ' / ' + items.length;
+    prog.classList.toggle('all-done', done.length === items.length && items.length > 0);
+  });
+}
+
+function initTasks() {
+  const state = loadState();
+  const items = document.querySelectorAll('.task-item');
+
+  items.forEach((item, i) => {
+    const id = 'task-' + i;
+    item.dataset.taskId = id;
+    if (state[id]) item.classList.add('done');
+
+    item.addEventListener('click', () => {
+      const isDone = item.classList.toggle('done');
+      const s = loadState();
+      if (isDone) s[id] = true; else delete s[id];
+      saveState(s);
+      updateCounters();
+    });
+  });
+
+  updateCounters();
+}
+
 function updateClock() {
   const now = new Date();
   const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -541,8 +623,10 @@ function updateClock() {
   const el = document.getElementById('clock');
   if (el) el.innerHTML = `<div class="time">${time}</div>${date}`;
 }
+
 updateClock();
 setInterval(updateClock, 30000);
+initTasks();
 </script>
 </body>
 </html>
