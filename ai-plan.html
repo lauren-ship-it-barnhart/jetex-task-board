@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JetEx AI Rollout Plan</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3a;
+    --text: #e2e4ea;
+    --muted: #7a7f8e;
+    --accent: #6c8cff;
+    --green: #4ade80;
+    --yellow: #facc15;
+    --red: #f87171;
+    --orange: #fb923c;
+    --purple: #a78bfa;
+    --cyan: #60d5fa;
+    --blue: #6c8cff;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    gap: 24px;
+  }
+  .header-left { display: flex; flex-direction: column; gap: 12px; }
+  header h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+  header h1 span { color: var(--accent); }
+  .subtitle { color: var(--muted); font-size: 13px; line-height: 1.55; max-width: 760px; }
+  .top-nav { display: flex; gap: 8px; flex-wrap: wrap; }
+  .top-nav a {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 12px; border-radius: 999px; border: 1px solid var(--border);
+    color: var(--muted); text-decoration: none; font-size: 12px;
+    font-weight: 600; letter-spacing: 0.3px; background: var(--card); transition: all 0.2s;
+  }
+  .top-nav a:hover { color: var(--text); border-color: #3a3d4a; }
+  .top-nav a.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+  .header-right { text-align: right; }
+  #clock { font-size: 14px; color: var(--muted); line-height: 1.5; }
+  #clock .time { font-size: 20px; color: var(--text); font-weight: 500; }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .summary-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 18px;
+  }
+  .summary-card .num { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+  .summary-card .label { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+
+  .section-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--muted); margin-bottom: 14px; margin-top: 28px; font-weight: 700;
+  }
+
+  .phase-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    align-items: start;
+    margin-bottom: 28px;
+  }
+  .phase-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px;
+  }
+  .phase-card.full-width { grid-column: 1 / -1; }
+  .phase-header {
+    display: flex; align-items: flex-start; gap: 12px; margin-bottom: 10px;
+  }
+  .phase-badge {
+    flex-shrink: 0;
+    background: rgba(108,140,255,0.15);
+    color: var(--accent);
+    font-size: 10px; font-weight: 700; letter-spacing: 0.8px;
+    text-transform: uppercase; padding: 4px 10px; border-radius: 999px;
+    white-space: nowrap; margin-top: 2px;
+  }
+  .phase-badge.green { background: rgba(74,222,128,0.12); color: var(--green); }
+  .phase-badge.yellow { background: rgba(250,204,21,0.12); color: var(--yellow); }
+  .phase-badge.orange { background: rgba(251,146,60,0.12); color: var(--orange); }
+  .phase-badge.purple { background: rgba(167,139,250,0.12); color: var(--purple); }
+  .phase-badge.cyan { background: rgba(96,213,250,0.12); color: var(--cyan); }
+  .phase-title { font-size: 15px; font-weight: 600; line-height: 1.35; }
+  .phase-weeks { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .phase-desc { font-size: 13px; color: var(--muted); line-height: 1.5; margin-bottom: 14px; }
+
+  .task-list { display: flex; flex-direction: column; gap: 8px; }
+  .task-item {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .task-item .check {
+    flex-shrink: 0; width: 16px; height: 16px; border-radius: 4px;
+    border: 1.5px solid var(--border); margin-top: 1px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .task-item .task-text { font-size: 13px; line-height: 1.45; }
+  .task-item .task-owner {
+    margin-left: auto; flex-shrink: 0; font-size: 10px; color: var(--muted);
+    background: rgba(42,45,58,0.8); padding: 2px 8px; border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .exit-criteria {
+    margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);
+  }
+  .exit-criteria .ec-label {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--green); font-weight: 700; margin-bottom: 8px;
+  }
+  .exit-criteria ul {
+    list-style: none; display: flex; flex-direction: column; gap: 6px;
+  }
+  .exit-criteria li {
+    font-size: 12px; color: var(--muted); line-height: 1.4;
+    display: flex; align-items: flex-start; gap: 6px;
+  }
+  .exit-criteria li::before { content: "\2714"; color: var(--green); flex-shrink: 0; font-size: 11px; margin-top: 1px; }
+
+  .milestones-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px;
+  }
+  .milestone-card {
+    background: linear-gradient(160deg, rgba(108,140,255,0.1), rgba(26,29,39,0.96) 40%);
+    border: 1px solid rgba(108,140,255,0.2); border-radius: 14px; padding: 18px;
+  }
+  .milestone-card h3 { font-size: 18px; margin-bottom: 6px; color: var(--accent); }
+  .milestone-card .m-date { font-size: 11px; color: var(--muted); margin-bottom: 14px; }
+  .milestone-card ul { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+  .milestone-card li {
+    font-size: 12px; color: var(--text); line-height: 1.45;
+    display: flex; align-items: flex-start; gap: 8px;
+    padding: 8px 10px; background: rgba(15,17,23,0.6);
+    border: 1px solid var(--border); border-radius: 8px;
+  }
+  .milestone-card li::before { content: "\25A0"; color: var(--accent); flex-shrink: 0; font-size: 8px; margin-top: 3px; }
+
+  .questions-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 28px;
+  }
+  .question-item {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 14px;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .question-num {
+    flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(108,140,255,0.15); color: var(--accent);
+    font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  }
+  .question-text { font-size: 13px; line-height: 1.45; color: var(--text); }
+
+  .skills-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 28px;
+  }
+  .skill-group { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+  .skill-group h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 10px; }
+  .skill-tag {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    background: var(--bg); border: 1px solid var(--border);
+    color: var(--cyan); padding: 3px 10px; border-radius: 999px; margin: 3px 3px 0 0;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+
+  @media (max-width: 960px) {
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+    .phase-grid { grid-template-columns: 1fr; }
+    .milestones-grid { grid-template-columns: 1fr; }
+    .questions-grid { grid-template-columns: 1fr; }
+    .skills-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 640px) {
+    body { padding: 16px; }
+    header { flex-direction: column; }
+    .header-right { text-align: left; }
+    .skills-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1><span>JetEx</span> AI Rollout Plan</h1>
+    <nav class="top-nav">
+      <a href="./index.html">Task Board</a>
+      <a href="./projects.html">Projects</a>
+      <a href="./plan.html">30/60/90 Plan</a>
+      <a class="active" href="./ai-plan.html">AI Rollout Plan</a>
+      <a href="./mariah.html">Mariah Calls</a>
+      <a href="./api-endpoints.html">API Endpoints</a>
+    </nav>
+    <p class="subtitle">10-week Claude &amp; SharePoint rollout plan — from subscription &amp; site architecture through org-wide adoption. Owner: Lauren Barnhart. Target: steady state by end of Week 10.</p>
+  </div>
+  <div class="header-right">
+    <div id="clock"></div>
+  </div>
+</header>
+
+<div class="summary-grid">
+  <div class="summary-card" style="border-color: rgba(108,140,255,0.3);">
+    <div class="num" style="color: var(--accent);">7</div>
+    <div class="label">Phases</div>
+  </div>
+  <div class="summary-card" style="border-color: rgba(96,213,250,0.3);">
+    <div class="num" style="color: var(--cyan);">10</div>
+    <div class="label">Weeks to Steady State</div>
+  </div>
+  <div class="summary-card" style="border-color: rgba(167,139,250,0.3);">
+    <div class="num" style="color: var(--purple);">18</div>
+    <div class="label">Target Skills</div>
+  </div>
+  <div class="summary-card" style="border-color: rgba(74,222,128,0.3);">
+    <div class="num" style="color: var(--green);">80%</div>
+    <div class="label">Seat Usage Goal (Day 90)</div>
+  </div>
+</div>
+
+<p class="section-label">Implementation Phases</p>
+
+<div class="phase-grid">
+
+  <!-- Phase 0 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <div class="phase-badge">Phase 0 &middot; Week 1</div>
+      <div>
+        <div class="phase-title">Prerequisites</div>
+        <div class="phase-weeks">Foundation before anything else can land</div>
+      </div>
+    </div>
+    <p class="phase-desc">Get Claude Team plan live, confirm billing entity, stand up tools-registry, and verify M365 readiness.</p>
+    <div class="task-list">
+      <div class="task-item"><div class="check"></div><div class="task-text">Confirm billing entity for Claude subscription (JetEx, BellAir, or Michie holding)</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Sign up for Claude Team plan — annual billing</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Add second Owner as admin (avoid single point of failure)</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Enable SSO via M365/Entra</div><div class="task-owner">Lauren + IT</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Verify org toggles: Code execution ON, Skills ON, User-created skills ON</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Stand up <code>tools-registry</code> private GitHub repo in JetExcellence org</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Inventory current personal skills — decide org vs. personal</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Confirm M365 license tier supports SharePoint Online + Power Automate Premium</div><div class="task-owner">IT</div></div>
+    </div>
+    <div class="exit-criteria">
+      <div class="ec-label">Exit Criteria</div>
+      <ul>
+        <li>Team plan live with ≥2 owners</li>
+        <li>tools-registry repo ready</li>
+        <li>No blockers on SharePoint site creation</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 1 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <div class="phase-badge yellow">Phase 1 &middot; Weeks 1–2</div>
+      <div>
+        <div class="phase-title">SharePoint Foundation</div>
+        <div class="phase-weeks">Stand up the site structure — don't fill it yet</div>
+      </div>
+    </div>
+    <p class="phase-desc">Create the Communication site hub, 7 Team sites, apply metadata schema, and wire Power Automate flows.</p>
+    <div class="task-list">
+      <div class="task-item"><div class="check"></div><div class="task-text">Create <em>JetEx-BellAir Knowledge Hub</em> Communication site and register as Hub</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Create 7 Team sites: Ops, Maintenance, Finance, Sales, People &amp; HR, IT, Leadership — associate to hub</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Apply theme/branding consistently across all sites</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Set permissions per site (Communication = all employees read; Team sites = dept members)</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Deploy metadata schema to every library (Title, Owner, Last Reviewed, Next Review, Audience, Sensitivity, Status, Certificate)</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Build staleness flow: daily check for <em>Next Review &lt; today</em> → Teams message to Owner</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Build new document flow: prompt uploader for metadata on upload</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Build promotion flow: Team site draft → Communication site Approved</div></div>
+    </div>
+    <div class="exit-criteria">
+      <div class="ec-label">Exit Criteria</div>
+      <ul>
+        <li>All 8 sites live and hub navigation works</li>
+        <li>Metadata schema deployed to every library</li>
+        <li>Staleness flow running</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <div class="phase-badge orange">Phase 2 &middot; Weeks 2–3</div>
+      <div>
+        <div class="phase-title">Knowledge Architecture</div>
+        <div class="phase-weeks">Decide what goes where before generating content</div>
+      </div>
+    </div>
+    <p class="phase-desc">Write the AI Knowledge Architecture doc, finalize taxonomy (Layer 1/2/3), and enable Claude connectors.</p>
+    <div class="task-list">
+      <div class="task-item"><div class="check"></div><div class="task-text">Write AI Knowledge Architecture doc — what lives where, who owns it, how Claude accesses it</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Publish taxonomy: SharePoint vs. Skill vs. Project vs. Live source for each content category</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Enable M365 connector (SharePoint + Outlook + OneDrive)</div><div class="task-owner">Lauren + IT</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Configure PostgreSQL MCP access via Claude Code</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Configure BigQuery access</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Evaluate Google Drive and Slack connectors — enable if needed</div><div class="task-owner">Lauren</div></div>
+    </div>
+    <div class="exit-criteria">
+      <div class="ec-label">Exit Criteria</div>
+      <ul>
+        <li>Architecture doc published to Communication site</li>
+        <li>M365 connector live</li>
+        <li>SharePoint search verified from within Claude</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <div class="phase-badge purple">Phase 3 &middot; Weeks 3–4</div>
+      <div>
+        <div class="phase-title">Foundational Skills</div>
+        <div class="phase-weeks">The two skills every other skill will reference</div>
+      </div>
+    </div>
+    <p class="phase-desc">Build <code>jetex-company-context</code> and <code>aviation-metrics</code>, migrate 3 existing skills, and establish CI pipeline.</p>
+    <div class="task-list">
+      <div class="task-item"><div class="check"></div><div class="task-text">Build <code>jetex-company-context</code> — two-cert structure, fleet at a glance, EOS snapshot, who's who, pointers</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Build <code>aviation-metrics</code> — canonical definitions: AOG, DNF, utilization, block hours, SCCM, completion rate</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Migrate <code>daily-email-bellair</code> to org — strip credentials, parameterize</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Migrate <code>sales-bonus-model</code> to org</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Migrate <code>ta-specialist-jetex</code> to org</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Set up skill folder structure standard and frontmatter requirements in tools-registry</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Set up CI: on merge to main, zip skill and publish to releases/ folder</div><div class="task-owner">Lauren</div></div>
+    </div>
+    <div class="exit-criteria">
+      <div class="ec-label">Exit Criteria</div>
+      <ul>
+        <li>Both foundational skills live org-wide</li>
+        <li>3 existing skills migrated and provisioned</li>
+        <li>tools-registry CI publishing zips on merge</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <div class="phase-badge cyan">Phase 4 &middot; Weeks 4–6</div>
+      <div>
+        <div class="phase-title">Content Migration</div>
+        <div class="phase-weeks">Populate SharePoint with content people actually reach for</div>
+      </div>
+    </div>
+    <p class="phase-desc">Tier 1 first: ops SOPs, dispatcher playbook, quote templates, rate cards, approval matrices, org chart. Draft → review → approve workflow.</p>
+    <div class="task-list">
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Tier 1:</strong> Migrate ops SOPs and dispatcher playbook (weekly-referenced)</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Tier 1:</strong> Migrate quote templates, rate cards, approval matrices</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Tier 1:</strong> Publish org chart to Communication site</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Assign Domain Owners to each Team site — hold them accountable for metadata</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Hand off KB hygiene to Business Ops Manager (or Lauren interim)</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Tier 2 (Month 2):</strong> HR policies, training records structure, board meeting templates</div></div>
+    </div>
+    <div class="exit-criteria">
+      <div class="ec-label">Exit Criteria</div>
+      <ul>
+        <li>All Tier 1 content migrated with metadata</li>
+        <li>Staleness flow running against real content</li>
+        <li>Business Ops Manager owns KB hygiene</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 5 -->
+  <div class="phase-card">
+    <div class="phase-header">
+      <div class="phase-badge green">Phase 5 &middot; Weeks 6–10</div>
+      <div>
+        <div class="phase-title">Skill Expansion</div>
+        <div class="phase-weeks">One skill per week — build what multiplies productivity</div>
+      </div>
+    </div>
+    <p class="phase-desc">Technical reference → Financial → Commercial → Compliance → Role assistants. Each skill must pass a quality bar before shipping.</p>
+    <div class="task-list">
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Week 6:</strong> <code>postgresql-schema</code> — tables, vetted queries, common joins</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Week 6:</strong> <code>bigquery-schema</code> — fleet analytics views</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Week 7:</strong> <code>sage-intacct-coa</code> — chart of accounts, dimensions, entity mapping</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Week 7:</strong> <code>monthly-close-checklist</code> — month-end steps and dependencies</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Week 8:</strong> <code>quote-builder</code> — charter quote workflow, pricing methodology, standard terms</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Week 8:</strong> <code>rfi-approval-logic</code> — dollar thresholds, routing, SharePoint destinations</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Week 9:</strong> <code>part-135-recordkeeping</code> — what to keep, how long, format</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Week 9:</strong> <code>dispatcher-helper</code> — common dispatcher decisions answered consistently</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Week 10:</strong> <code>vp-sales-assistant</code>, <code>maintenance-financial-analyst</code>, <code>hr-generalist</code></div></div>
+    </div>
+    <div class="exit-criteria">
+      <div class="ec-label">Exit Criteria</div>
+      <ul>
+        <li>Skill catalog covers top 10 highest-leverage workflows</li>
+        <li>Each skill has known owner and last-reviewed date</li>
+        <li>≤800 lines per skill; tested with 10+ realistic prompts</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Phase 6 -->
+  <div class="phase-card full-width">
+    <div class="phase-header">
+      <div class="phase-badge">Phase 6 &middot; Week 4 Onward</div>
+      <div>
+        <div class="phase-title">Rollout &amp; Adoption</div>
+        <div class="phase-weeks">3 onboarding waves · AI Office Hours · feedback loop</div>
+      </div>
+    </div>
+    <p class="phase-desc">Drive use without forcing it. Onboard in waves, keep Office Hours running, and triage every "Claude got it wrong" incident into a concrete improvement.</p>
+    <div class="task-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Wave 1 (Wk 4):</strong> Lauren + Data Engineer + 1–2 power users. Premium seats.</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Wave 2 (Wk 6):</strong> Leadership + department heads. Standard seats, upgrade as needed.</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text"><strong>Wave 3 (Wk 8):</strong> Rest of org, dept by dept. Each gets ≤30-min onboarding + first task.</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Run AI Office Hours weekly — demos, troubleshooting, wins log</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Create <em>AI Office Hours Log</em> in SharePoint — questions, answers, skill gaps</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Triage every "Claude got it wrong" incident: missing content / stale content / skill gap / wrong trigger / user error</div></div>
+    </div>
+  </div>
+
+</div>
+
+<p class="section-label">30 / 60 / 90 Day Milestones</p>
+
+<div class="milestones-grid">
+  <div class="milestone-card">
+    <h3>Day 30</h3>
+    <div class="m-date">End of Week 4 &middot; ~May 2026</div>
+    <ul>
+      <li>Team plan live, SSO configured, ≥5 users onboarded</li>
+      <li>All 8 SharePoint sites created with metadata schema</li>
+      <li><code>jetex-company-context</code> and <code>aviation-metrics</code> live org-wide</li>
+      <li>3 migrated skills provisioned</li>
+      <li>AI Knowledge Architecture doc published</li>
+      <li>M365 connector functional and verified</li>
+    </ul>
+  </div>
+  <div class="milestone-card">
+    <h3>Day 60</h3>
+    <div class="m-date">End of Week 8 &middot; ~June 2026</div>
+    <ul>
+      <li>All Tier 1 SharePoint content migrated</li>
+      <li>5–7 additional skills shipped per Phase 5</li>
+      <li>All department heads using Claude weekly</li>
+      <li>First quarterly skill audit completed</li>
+      <li>Feedback loop producing visible improvements</li>
+    </ul>
+  </div>
+  <div class="milestone-card">
+    <h3>Day 90</h3>
+    <div class="m-date">End of Week 10 &middot; ~July 2026</div>
+    <ul>
+      <li>Full org onboarded (80% seat usage target)</li>
+      <li>Skill catalog at target state (~15–18 skills)</li>
+      <li>Business Ops Manager running KB operations independently</li>
+      <li>Data Engineer productive on BigQuery/PostgreSQL skills</li>
+      <li>Evaluate escalation to Enterprise tier</li>
+    </ul>
+  </div>
+</div>
+
+<p class="section-label">Target Skill Catalog (Week 10)</p>
+
+<div class="skills-grid">
+  <div class="skill-group">
+    <h4>Orientation</h4>
+    <span class="skill-tag">jetex-company-context</span>
+  </div>
+  <div class="skill-group">
+    <h4>Vocabulary / Reference</h4>
+    <span class="skill-tag">aviation-metrics</span>
+    <span class="skill-tag">postgresql-schema</span>
+    <span class="skill-tag">bigquery-schema</span>
+    <span class="skill-tag">sage-intacct-coa</span>
+  </div>
+  <div class="skill-group">
+    <h4>Procedural Workflows</h4>
+    <span class="skill-tag">daily-email-bellair</span>
+    <span class="skill-tag">sales-bonus-model</span>
+    <span class="skill-tag">ta-specialist-jetex</span>
+    <span class="skill-tag">quote-builder</span>
+    <span class="skill-tag">rfi-approval-logic</span>
+    <span class="skill-tag">monthly-close-checklist</span>
+    <span class="skill-tag">dispatcher-helper</span>
+  </div>
+  <div class="skill-group">
+    <h4>Compliance</h4>
+    <span class="skill-tag">part-135-recordkeeping</span>
+  </div>
+  <div class="skill-group">
+    <h4>Role Assistants</h4>
+    <span class="skill-tag">cfo-assistant</span>
+    <span class="skill-tag">vp-sales-assistant</span>
+    <span class="skill-tag">maintenance-financial-analyst</span>
+    <span class="skill-tag">hr-generalist</span>
+  </div>
+  <div class="skill-group">
+    <h4>Voice / Style</h4>
+    <span class="skill-tag" style="color: var(--muted);">JetEx voice</span>
+    <span class="skill-tag" style="color: var(--muted);">BellAir voice</span>
+    <div style="font-size: 11px; color: var(--muted); margin-top: 8px;">Likely Custom Styles, not skills</div>
+  </div>
+</div>
+
+<p class="section-label">Open Questions — Resolve in Week 1</p>
+
+<div class="questions-grid">
+  <div class="question-item"><div class="question-num">1</div><div class="question-text">Billing entity for the Claude subscription — JetEx, BellAir, or Michie holding?</div></div>
+  <div class="question-item"><div class="question-num">2</div><div class="question-text">Initial seat mix — how many Premium vs. Standard on Day 1?</div></div>
+  <div class="question-item"><div class="question-num">3</div><div class="question-text">Who is the second Owner on the Claude org if not Chap?</div></div>
+  <div class="question-item"><div class="question-num">4</div><div class="question-text">Domain Owner assignments for each of the 7 Team sites</div></div>
+  <div class="question-item"><div class="question-num">5</div><div class="question-text">Bring a consultant in for SharePoint hub setup, or have IT handle it?</div></div>
+  <div class="question-item"><div class="question-num">6</div><div class="question-text">Custom Styles vs. voice skills for JetEx/BellAir tone?</div></div>
+  <div class="question-item"><div class="question-num">7</div><div class="question-text">Timeline for Data Engineer hire — affects Phase 5 technical skills cadence</div></div>
+</div>
+
+<script>
+function updateClock() {
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  const date = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const el = document.getElementById('clock');
+  if (el) el.innerHTML = `<div class="time">${time}</div>${date}`;
+}
+updateClock();
+setInterval(updateClock, 30000);
+</script>
+</body>
+</html>
