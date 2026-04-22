@@ -693,6 +693,58 @@ const PROJECTS = [
     deployUrl: "https://sales-scheduler-c3iwkxbkbq-ue.a.run.app",
     shipDate: "",
     startDate: ""
+  },
+  {
+    name: "Operations Dashboard",
+    status: "Shipped",
+    priority: "High",
+    phase: "Live",
+    category: ["Dashboard", "IT/AI"],
+    description: "Sales performance, fleet utilization, and executive KPI dashboards built by Chaz (PowerChalk). Hosted on api-jetex VM.",
+    nextAction: "Connect live BigQuery data sources, build Fleet Performance section",
+    blockers: "",
+    deployUrl: "https://api.jetexcellence.com",
+    shipDate: "2026-04-01",
+    startDate: ""
+  },
+  {
+    name: "JetEx CRM",
+    status: "In Progress",
+    priority: "High",
+    phase: "Build",
+    category: ["Sales", "IT/AI"],
+    description: "Custom CRM replacing JetInsight. FastAPI/Cloud SQL/Cloud Run. Real-time caller ID for Mariah, client history, and quote pipeline. PRD complete April 2026.",
+    nextAction: "Build core client and quote models, wire Mariah caller ID",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: "2026-04-15"
+  },
+  {
+    name: "Fuel Reconciliation",
+    status: "Planned",
+    priority: "High",
+    phase: "Scoping",
+    category: ["Finance", "IT/AI"],
+    description: "Match fuel invoices to flight logs and surface pricing discrepancies across all FBOs. Part of the broader Accounting Automation program.",
+    nextAction: "Define FBO data sources, build invoice ingestion pipeline",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: ""
+  },
+  {
+    name: "AI CFO",
+    status: "Planned",
+    priority: "High",
+    phase: "Scoping",
+    category: ["Finance", "IT/AI"],
+    description: "P&L by tail number, 13-week cash flow model, and managed fleet financial health dashboard. Covers N808MC, N118DL, N140MC. Connects Intacct GL + BambooHR payroll.",
+    nextAction: "Finish Intacct GL pull, layer in BambooHR payroll cost breakout",
+    blockers: "",
+    deployUrl: "",
+    shipDate: "",
+    startDate: ""
   }
 ];
 
