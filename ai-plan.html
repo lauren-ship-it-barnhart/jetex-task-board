@@ -238,7 +238,7 @@
       <a href="./mariah.html">Mariah Calls</a>
       <a href="./api-endpoints.html">API Endpoints</a>
     </nav>
-    <p class="subtitle">10-week Claude &amp; SharePoint rollout plan — from subscription &amp; site architecture through org-wide adoption. Owner: Lauren Barnhart. Target: steady state by end of Week 10.</p>
+    <p class="subtitle">10-week Claude &amp; SharePoint rollout plan — simplified from original. Knowledge Hub is the canonical KB; Claude's M365 connector is the search layer. No hub association required. Owner: Lauren Barnhart.</p>
   </div>
   <div class="header-right">
     <div id="clock"></div>
@@ -247,7 +247,7 @@
 
 <div class="summary-grid">
   <div class="summary-card" style="border-color: rgba(108,140,255,0.3);">
-    <div class="num" style="color: var(--accent);">7</div>
+    <div class="num" style="color: var(--accent);">6</div>
     <div class="label">Phases</div>
   </div>
   <div class="summary-card" style="border-color: rgba(96,213,250,0.3);">
@@ -280,21 +280,22 @@
     </div>
     <p class="phase-desc">Get Claude Team plan live, confirm billing entity, stand up tools-registry, and verify M365 readiness.</p>
     <div class="task-list">
-      <div class="task-item"><div class="check"></div><div class="task-text">Confirm billing entity for Claude subscription (JetEx, BellAir, or Michie holding)</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Confirm billing entity for Claude subscription</div><div class="task-owner">Lauren</div></div>
       <div class="task-item"><div class="check"></div><div class="task-text">Sign up for Claude Team plan — annual billing</div><div class="task-owner">Lauren</div></div>
       <div class="task-item"><div class="check"></div><div class="task-text">Add second Owner as admin (avoid single point of failure)</div><div class="task-owner">Lauren</div></div>
-      <div class="task-item"><div class="check"></div><div class="task-text">Enable SSO via M365/Entra</div><div class="task-owner">Lauren + IT</div></div>
       <div class="task-item"><div class="check"></div><div class="task-text">Verify org toggles: Code execution ON, Skills ON, User-created skills ON</div><div class="task-owner">Lauren</div></div>
-      <div class="task-item"><div class="check"></div><div class="task-text">Stand up <code>tools-registry</code> private GitHub repo in JetExcellence org</div><div class="task-owner">Lauren</div></div>
-      <div class="task-item"><div class="check"></div><div class="task-text">Inventory current personal skills — decide org vs. personal</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Stand up <code>tools-registry</code> private GitHub repo — <a href="https://github.com/Jet-Excellence/tools-registry" style="color:var(--cyan)" target="_blank">Jet-Excellence/tools-registry</a></div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Inventory personal skills — decided: all stay personal, tools-registry starts fresh</div><div class="task-owner">Lauren</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Enable SSO via M365/Entra <em style="color:var(--muted)">(deferred — not blocking)</em></div><div class="task-owner">Lauren + IT</div></div>
       <div class="task-item"><div class="check"></div><div class="task-text">Confirm M365 license tier supports SharePoint Online + Power Automate Premium</div><div class="task-owner">IT</div></div>
     </div>
     <div class="exit-criteria">
       <div class="ec-label">Exit Criteria</div>
       <ul>
         <li>Team plan live with ≥2 owners</li>
-        <li>tools-registry repo ready</li>
-        <li>No blockers on SharePoint site creation</li>
+        <li>Org toggles verified ON</li>
+        <li>tools-registry repo scaffolded with CI and skill template</li>
+        <li>Personal skills inventoried — all remain personal</li>
       </ul>
     </div>
   </div>
@@ -305,26 +306,26 @@
       <div class="phase-badge yellow">Phase 1 &middot; Weeks 1–2</div>
       <div>
         <div class="phase-title">SharePoint Foundation</div>
-        <div class="phase-weeks">Stand up the site structure — don't fill it yet</div>
+        <div class="phase-weeks">Knowledge Hub is the canonical KB — team sites stay as-is</div>
       </div>
       <span class="phase-progress" data-phase-progress="1"></span>
     </div>
-    <p class="phase-desc">Create the Communication site hub, 7 Team sites, apply metadata schema, and wire Power Automate flows.</p>
+    <p class="phase-desc">Create the JetEx Knowledge Hub Communication site and 7 document libraries with metadata. Existing team sites (Ops, Finance, Maintenance, etc.) are untouched — no hub association needed. Claude's M365 connector is the search layer, not SharePoint native search.</p>
     <div class="task-list">
-      <div class="task-item"><div class="check"></div><div class="task-text">Create <em>JetEx-BellAir Knowledge Hub</em> Communication site and register as Hub</div></div>
-      <div class="task-item"><div class="check"></div><div class="task-text">Create 7 Team sites: Ops, Maintenance, Finance, Sales, People &amp; HR, IT, Leadership — associate to hub</div></div>
-      <div class="task-item"><div class="check"></div><div class="task-text">Apply theme/branding consistently across all sites</div></div>
-      <div class="task-item"><div class="check"></div><div class="task-text">Set permissions per site (Communication = all employees read; Team sites = dept members)</div></div>
-      <div class="task-item"><div class="check"></div><div class="task-text">Deploy metadata schema to every library (Title, Owner, Last Reviewed, Next Review, Audience, Sensitivity, Status, Certificate)</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Create <em>JetEx Knowledge Hub</em> Communication site — <a href="https://jetexcellence.sharepoint.com/sites/JetExKnowledgeHub" style="color:var(--cyan)" target="_blank">jetexcellence.sharepoint.com/sites/JetExKnowledgeHub</a></div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Register site as a hub site in SharePoint admin center</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Create 7 document libraries: Company, Operations, Maintenance, Finance, People &amp; HR, Commercial, Regulatory</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Deploy metadata schema to all 7 libraries: Owner, Last Reviewed, Next Review, Audience, Sensitivity, Status</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Set site permissions: all employees = read; Lauren = owner</div></div>
+      <div class="task-item"><div class="check"></div><div class="task-text">Clean up Knowledge Hub homepage and navigation</div></div>
       <div class="task-item"><div class="check"></div><div class="task-text">Build staleness flow: daily check for <em>Next Review &lt; today</em> → Teams message to Owner</div></div>
-      <div class="task-item"><div class="check"></div><div class="task-text">Build new document flow: prompt uploader for metadata on upload</div></div>
-      <div class="task-item"><div class="check"></div><div class="task-text">Build promotion flow: Team site draft → Communication site Approved</div></div>
     </div>
     <div class="exit-criteria">
       <div class="ec-label">Exit Criteria</div>
       <ul>
-        <li>All 8 sites live and hub navigation works</li>
-        <li>Metadata schema deployed to every library</li>
+        <li>Knowledge Hub live at /sites/JetExKnowledgeHub</li>
+        <li>All 7 libraries created with full metadata schema (6 columns, no Certificate)</li>
+        <li>M365 connector configured and searching the hub</li>
         <li>Staleness flow running</li>
       </ul>
     </div>
@@ -480,8 +481,8 @@
     <h3>Day 30</h3>
     <div class="m-date">End of Week 4 &middot; ~May 2026</div>
     <ul>
-      <li>Team plan live, SSO configured, ≥5 users onboarded</li>
-      <li>All 8 SharePoint sites created with metadata schema</li>
+      <li>Team plan live, ≥5 users onboarded (SSO deferred)</li>
+      <li>JetEx Knowledge Hub live with 7 libraries + metadata schema</li>
       <li><code>jetex-company-context</code> and <code>aviation-metrics</code> live org-wide</li>
       <li>3 migrated skills provisioned</li>
       <li>AI Knowledge Architecture doc published</li>
@@ -550,21 +551,21 @@
   <div class="skill-group">
     <h4>Voice / Style</h4>
     <span class="skill-tag" style="color: var(--muted);">JetEx voice</span>
-    <span class="skill-tag" style="color: var(--muted);">BellAir voice</span>
     <div style="font-size: 11px; color: var(--muted); margin-top: 8px;">Likely Custom Styles, not skills</div>
   </div>
 </div>
 
-<p class="section-label">Open Questions — Resolve in Week 1</p>
+<p class="section-label">Open Questions</p>
 
 <div class="questions-grid">
-  <div class="question-item"><div class="question-num">1</div><div class="question-text">Billing entity for the Claude subscription — JetEx, BellAir, or Michie holding?</div></div>
-  <div class="question-item"><div class="question-num">2</div><div class="question-text">Initial seat mix — how many Premium vs. Standard on Day 1?</div></div>
-  <div class="question-item"><div class="question-num">3</div><div class="question-text">Who is the second Owner on the Claude org if not Chap?</div></div>
-  <div class="question-item"><div class="question-num">4</div><div class="question-text">Domain Owner assignments for each of the 7 Team sites</div></div>
-  <div class="question-item"><div class="question-num">5</div><div class="question-text">Bring a consultant in for SharePoint hub setup, or have IT handle it?</div></div>
-  <div class="question-item"><div class="question-num">6</div><div class="question-text">Custom Styles vs. voice skills for JetEx/BellAir tone?</div></div>
-  <div class="question-item"><div class="question-num">7</div><div class="question-text">Timeline for Data Engineer hire — affects Phase 5 technical skills cadence</div></div>
+  <div class="question-item"><div class="question-num" style="background:rgba(74,222,128,0.15);color:var(--green)">✓</div><div class="question-text" style="color:var(--muted);text-decoration:line-through">Billing entity for the Claude subscription</div></div>
+  <div class="question-item"><div class="question-num">1</div><div class="question-text">Initial seat mix — how many Premium vs. Standard on Day 1?</div></div>
+  <div class="question-item"><div class="question-num" style="background:rgba(74,222,128,0.15);color:var(--green)">✓</div><div class="question-text" style="color:var(--muted);text-decoration:line-through">Second Owner on Claude org</div></div>
+  <div class="question-item"><div class="question-num" style="background:rgba(74,222,128,0.15);color:var(--green)">✓</div><div class="question-text" style="color:var(--muted);text-decoration:line-through">SharePoint hub setup approach — simplified, no hub association needed</div></div>
+  <div class="question-item"><div class="question-num" style="background:rgba(74,222,128,0.15);color:var(--green)">✓</div><div class="question-text" style="color:var(--muted);text-decoration:line-through">Personal skills inventory — all stay personal, tools-registry starts fresh</div></div>
+  <div class="question-item"><div class="question-num">2</div><div class="question-text">Custom Styles vs. voice skill for JetEx tone?</div></div>
+  <div class="question-item"><div class="question-num">3</div><div class="question-text">Timeline for Data Engineer hire — affects Phase 5 technical skills cadence</div></div>
+  <div class="question-item"><div class="question-num">4</div><div class="question-text">Domain Owner assignments for each Knowledge Hub library (who owns Ops content? Maintenance? etc.)</div></div>
 </div>
 
 <script>
