@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JetEx 30/60/90 Plan</title>
+<title>JetEx Employee AI Rollout Plan</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
@@ -232,7 +232,7 @@
 
 <header>
   <div class="header-left">
-    <h1><span>JetEx</span> 30/60/90 Plan</h1>
+    <h1><span>JetEx</span> Employee AI Rollout</h1>
     <div class="top-nav">
       <a href="./index.html">Task Board</a>
       <a href="./projects.html">Projects</a>
@@ -242,7 +242,7 @@
       <a href="./api-endpoints.html">API Endpoints</a>
     </div>
     <p class="subtitle">
-      This page turns the platform priorities into a trackable plan. Status is derived from the live task board where possible, so urgent items show as current work and completed items roll up automatically.
+      Current operating plan for getting AI into employees' hands faster: training, access, role playbooks, SharePoint knowledge base, and integrated agents with clear owners.
     </p>
   </div>
   <div class="header-right">
@@ -280,75 +280,80 @@ const STORAGE_KEY = 'jetex-tasks';
 
 const plan = [
   {
+    label: 'Today',
+    summary: 'Create the employee-facing starting point and access process so non-AI-literate employees know what to do first.',
+    items: [
+      {
+        title: 'Publish AI Start Here structure',
+        match: 'Publish SharePoint AI Start Here structure',
+        note: 'Create the top-level SharePoint knowledge-base structure: Start Here, Approved Tools, Safe AI Use, Training Requirements, Request Access, Department Playbooks, and Approved Agents.'
+      },
+      {
+        title: 'Create employee training and access tracker',
+        match: 'Create employee AI training and access tracker',
+        note: 'Track employee name, department, email, training status, approved tier, tools, first workflow, owner, last check-in, and blocker.'
+      },
+      {
+        title: 'Draft Safe AI Use quick card',
+        match: 'Draft Safe AI Use quick card',
+        note: 'Give employees a one-page rule set for safe inputs, prohibited data, human review, and who to ask when unsure.'
+      },
+      {
+        title: 'Pick first workflow per department',
+        match: 'Pick first AI workflow per department',
+        note: 'Choose one starting workflow for Finance, Sales, Ops/Dispatch, Maintenance, HR/Recruiting, and Executive/Admin.'
+      }
+    ]
+  },
+  {
+    label: '7 Days',
+    summary: 'Turn policy and training into department-specific playbooks and a controlled first-agent rollout.',
+    items: [
+      {
+        title: 'Publish Finance, Sales, Ops, MX, HR, and Executive playbooks',
+        match: 'Publish department AI playbooks',
+        note: 'Each playbook needs allowed use cases, prohibited data, example prompts, human review rules, and support owner.'
+      },
+      {
+        title: 'Complete agent readiness scorecards',
+        match: 'Complete agent readiness scorecards for employee rollout',
+        note: 'Score WILCO, Daily Briefing, Slack/Teams data Q&A, AR Collection Prioritizer, and Employee Onboarding Bot before expanding access.'
+      },
+      {
+        title: 'Run first department demos',
+        match: 'Run first employee AI department demos',
+        note: 'Use real job-to-be-done examples, not abstract prompting lessons.'
+      },
+      {
+        title: 'Confirm AI access tiers',
+        match: 'Confirm employee AI access tiers',
+        note: 'Separate Level 1 general users from Level 2 workflow users and Level 4 builders. Keep Codex and Claude Code approval-gated.'
+      }
+    ]
+  },
+  {
     label: '30 Days',
-    summary: 'Establish operational clarity, verify what is truly live, and stop documentation drift.',
+    summary: 'Make adoption measurable and repeatable across departments.',
     items: [
       {
-        title: 'Build authoritative workload register',
-        match: 'Build authoritative workload register for every live or possibly-live platform service',
-        note: 'Create one canonical register with repo, runtime, owner, exposure, source systems, data written, and current status for every workload.'
+        title: 'Reach 80% Tier 1 training completion',
+        match: 'Reach 80 percent Tier 1 AI training completion',
+        note: 'Use Anthropic Academy certificates or equivalent evidence and keep completion in the employee tracker.'
       },
       {
-        title: 'Verify unclear live items',
-        match: 'Verify unclear live items: CEO Assistant, Meeting Action Sync, RFI flow, BambooHR overtime, ai-quote-bot, pilot-metrics-dashboard, jet-insight-events, claude-server',
-        note: 'Resolve the status of the items that are claimed, visible, or partially documented but not yet cleanly pinned down.'
+        title: 'Launch weekly adoption review',
+        match: 'Launch weekly employee AI adoption review',
+        note: 'Review active users, workflows used, incidents, feedback, and the next improvement per department.'
       },
       {
-        title: 'Reclassify the roadmap',
-        match: 'Reclassify roadmap into live, built-but-not-fully-shipped, and not-yet-built',
-        note: 'Make the roadmap usable by splitting it into live, built-but-not-fully-shipped, and not-yet-built.'
+        title: 'Publish five approved agent pages',
+        match: 'Publish approved agent pages for employee AI rollout',
+        note: 'Each agent page needs purpose, audience, access link, data sources, examples, limitations, owner, and support path.'
       },
       {
-        title: 'Finalize current-state docs',
-        manualStatus: 'done',
-        note: 'Completed on March 27 with the folder cleanup, current-state summary, strategy review, and 30/60/90 plan docs.'
-      }
-    ]
-  },
-  {
-    label: '60 Days',
-    summary: 'Reduce platform risk by hardening identity, secrets, exposure, runtime decisions, and sandbox trust.',
-    items: [
-      {
-        title: 'Move workloads off default compute service accounts',
-        match: 'Move core GCP workloads off default compute service accounts',
-        note: 'Assign dedicated service accounts by workload or domain and eliminate overuse of the default compute identity.'
-      },
-      {
-        title: 'Standardize secrets and review exposure',
-        match: 'Standardize Secret Manager usage and review public ingress/default-network exposure',
-        note: 'Make Secret Manager the standard and review which internal services should not be public.'
-      },
-      {
-        title: 'Decide runtime future of api-jetex and JetInsight scraper',
-        match: 'Decide long-term future of api-jetex and legacy JetInsight scraper path',
-        note: 'Document whether these remain long-term anchors or should be decomposed or replaced.'
-      },
-      {
-        title: 'Repair sandbox replication trust',
-        match: 'Repair sandbox replication trust, especially daily_sync_jet_insight',
-        note: 'Fix the broken sync path and make sandbox report trustworthiness explicit.'
-      }
-    ]
-  },
-  {
-    label: '90 Days',
-    summary: 'Ship one broad internal AI product and extend the strongest existing assistants instead of starting from zero.',
-    items: [
-      {
-        title: 'Ship Employee Knowledge Bot',
-        match: 'Ship Employee Knowledge Bot after platform clarity and hardening work',
-        note: 'This is the highest-leverage next company-wide AI product once clarity and hardening work are underway.'
-      },
-      {
-        title: 'Expand Sales Intelligence GPT',
-        match: 'Expand Sales Intelligence GPT into pricing guidance and quote support',
-        note: 'Move from reporting toward pricing guidance, margin guardrails, and quote support.'
-      },
-      {
-        title: 'Expand finance AI workflows',
-        match: 'Expand finance AI from recon reporting into invoice status and AR workflows',
-        note: 'Build on Intacct sync and recon to support invoice status, AR prioritization, and workflow support.'
+        title: 'Measure time saved by workflow',
+        match: 'Measure time saved by employee AI workflow',
+        note: 'Track observed time saved for the first department workflows and use it to prioritize the next agent builds.'
       }
     ]
   }

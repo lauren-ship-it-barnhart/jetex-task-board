@@ -222,6 +222,7 @@
   .tag-cat-fleet { background: #2a1f1a; color: #c49a6c; }
   .tag-cat-dashboard { background: #3a1a1a; color: var(--red); }
   .tag-cat-l10\ prep { background: #2a2a1a; color: var(--yellow); }
+  .tag-cat-enablement { background: #1a2a3a; color: var(--cyan); }
   .tag-date { font-size: 10px; color: var(--muted); padding: 2px 0; }
 
   .table-view { width: 100%; overflow-x: auto; }
@@ -303,28 +304,32 @@
     <span class="ql-icon">&#128200;</span>
     <span>Accounting Roadmap</span>
   </a>
+  <a class="quick-link" href="./plan.html">
+    <span class="ql-icon">&#129302;</span>
+    <span>Employee AI Rollout</span>
+  </a>
 </div>
 
 <section class="spotlight">
   <div class="spotlight-card">
-    <h2>Accounting Automation Program</h2>
+    <h2>Today: Employee AI Rollout</h2>
     <p>
-      Detailed roadmap for daily P&amp;L, 5-day close, fuel reconciliation, card matching,
-      bank exception handling, payroll outputs, purchasing automation, and the Veryon to Intacct bridge.
+      Current focus is getting AI into employees' hands faster: training, access, role playbooks,
+      approved agents, and a SharePoint knowledge base employees can actually start from.
     </p>
     <div class="spotlight-actions">
-      <a class="spotlight-btn primary" href="./accounting-automation.html">Open Roadmap &amp; Tracker</a>
-      <a class="spotlight-btn" href="./accounting-automation.html#tracker">Jump to Execution Tracker</a>
+      <a class="spotlight-btn primary" href="./plan.html">Open 30/60/90 Rollout</a>
+      <a class="spotlight-btn" href="./accounting-automation.html">Accounting Roadmap</a>
     </div>
   </div>
   <div class="milestone-card">
-    <h2>90-Day Milestones</h2>
-    <p>Sequence is stabilize current tools first, then stand up daily exception pipelines, then deliver finance outputs and upstream integrations.</p>
+    <h2>Today's Milestones</h2>
+    <p>Keep Hypercard, MX, and Accounting visible, but spend today's execution time on employee adoption.</p>
     <div class="milestone-list">
-      <div class="milestone"><span>Days 1-15</span><span>Control model + Fyle audit</span></div>
-      <div class="milestone"><span>Days 16-45</span><span>Fuel, card, and bank pipelines</span></div>
-      <div class="milestone"><span>Days 46-75</span><span>Payroll + flash P&amp;L outputs</span></div>
-      <div class="milestone"><span>Days 76-90</span><span>Purchasing + Veryon scope</span></div>
+      <div class="milestone"><span>Start Here</span><span>AI knowledge base structure</span></div>
+      <div class="milestone"><span>Access</span><span>Training and approval tracker</span></div>
+      <div class="milestone"><span>Departments</span><span>First workflow for each team</span></div>
+      <div class="milestone"><span>Agents</span><span>Readiness scorecards</span></div>
     </div>
   </div>
 </section>
@@ -343,6 +348,19 @@
 
 <script>
 const PROJECTS = [
+  {
+    name: "Employee AI Rollout",
+    status: "In Progress",
+    priority: "Urgent",
+    phase: "Execution",
+    category: ["IT/AI", "Enablement"],
+    description: "Company rollout to get employees using approved AI tools and integrated agents safely: training, access, role playbooks, SharePoint KB, and agent readiness.",
+    nextAction: "Build Start Here page, training/access tracker, Safe AI Use quick card, and first workflow per department",
+    blockers: "Need final SharePoint KB location and department owner confirmations",
+    deployUrl: "./plan.html",
+    shipDate: "",
+    startDate: "2026-04-27"
+  },
   {
     name: "Accounting Automation",
     status: "In Progress",
