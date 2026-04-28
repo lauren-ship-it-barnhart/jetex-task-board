@@ -115,9 +115,11 @@ def clone_repo(repo: str, branch: str, base_ref: str, github_token: str) -> str:
 
 def run_codex(repo_dir: str, prompt: str) -> str:
     codex_command = os.environ.get("CODEX_COMMAND")
+    codex_home = os.environ.get("CODEX_HOME", "/tmp/codex")
+    os.makedirs(codex_home, exist_ok=True)
     env = {
         "CODEX_TASK_PROMPT": prompt,
-        "CODEX_HOME": os.environ.get("CODEX_HOME", "/tmp/codex"),
+        "CODEX_HOME": codex_home,
     }
     if codex_command:
         return run(codex_command, cwd=repo_dir, extra_env=env)
