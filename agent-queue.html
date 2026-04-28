@@ -362,6 +362,7 @@ function renderTask(task) {
         <div><b>Update</b> ${escHtml(task.last_agent_update || 'No update yet')}</div>
       </div>
       <div class="actions">
+        ${task.status !== 'ready_for_agent' ? `<button onclick="updateStatus('${escHtml(task.id)}', 'ready_for_agent')">Ready</button>` : ''}
         ${task.status !== 'agent_running' ? `<button onclick="updateStatus('${escHtml(task.id)}', 'agent_running')">Running</button>` : ''}
         ${task.status !== 'human_review' ? `<button onclick="updateStatus('${escHtml(task.id)}', 'human_review')">Review</button>` : ''}
         ${task.status !== 'blocked' ? `<button onclick="updateStatus('${escHtml(task.id)}', 'blocked')">Blocked</button>` : ''}
