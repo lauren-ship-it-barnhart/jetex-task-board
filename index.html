@@ -174,6 +174,65 @@
   }
   .add-bar button:hover { opacity: 0.85; }
 
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .filter-bar label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .filter-bar select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 12px;
+    padding: 7px 9px;
+    outline: none;
+  }
+  .filter-bar input[type="checkbox"] { accent-color: var(--accent); }
+  .view-toggle {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .view-toggle button,
+  .reset-filter {
+    background: var(--bg);
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 11px;
+  }
+  .view-toggle button + button { border-left: 1px solid var(--border); }
+  .view-toggle button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+  .reset-filter {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .reset-filter:hover,
+  .view-toggle button:hover {
+    color: var(--text);
+  }
+
   .columns {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
@@ -252,6 +311,8 @@
   .task-actions button:hover { background: var(--border); color: var(--text); }
   .task-actions .btn-done:hover { color: var(--green); }
   .task-actions .btn-urgent:hover { color: var(--red); }
+  .task-actions .btn-agent:hover { color: var(--cyan); }
+  .task-actions .btn-archive:hover { color: var(--orange); }
   .task-actions .btn-delete:hover { color: var(--red); }
   .task-meta {
     display: flex;
@@ -275,6 +336,8 @@
   .tag-mx { background: #3a1a1a; color: var(--red); }
   .tag-general { background: #2a2d3a; color: var(--muted); }
   .tag-claude { background: #1a2a3a; color: var(--cyan); }
+  .tag-source { background: #1a2a3a; color: var(--cyan); }
+  .tag-status { background: #2f243a; color: var(--purple); }
   .tag-date {
     font-size: 10px;
     color: var(--muted);
@@ -287,6 +350,21 @@
     text-align: center;
     padding: 30px 0;
     font-style: italic;
+  }
+  .archive-view {
+    display: none;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .archive-view.open { display: block; }
+  .archive-view h2 {
+    color: var(--muted);
+    font-size: 13px;
+    letter-spacing: 1.2px;
+    margin-bottom: 14px;
+    text-transform: uppercase;
   }
   .toast-wrap {
     position: fixed;
@@ -322,6 +400,9 @@
 
   @media (max-width: 900px) {
     .columns { grid-template-columns: 1fr; }
+    .add-bar { flex-direction: column; }
+    .filter-bar { align-items: stretch; }
+    .filter-bar label { justify-content: space-between; }
   }
 </style>
 </head>
@@ -332,6 +413,7 @@
     <h1><span>JetEx</span> Task Board</h1>
     <nav class="top-nav">
       <a class="active" href="./index.html">Task Board</a>
+      <a href="./agent-queue.html">Agent Queue</a>
       <a href="./projects.html">Projects</a>
       <a href="./plan.html">30/60/90 Plan</a>
       <a href="./ai-plan.html">AI Rollout Plan</a>
@@ -372,6 +454,45 @@
   <button onclick="addTask()">Add</button>
 </div>
 
+<div class="filter-bar">
+  <div class="view-toggle">
+    <button id="view-board" class="active" onclick="setBoardView('board')">Board</button>
+    <button id="view-archive" onclick="setBoardView('archive')">Archive</button>
+  </div>
+  <label>Source
+    <select id="sourceFilter">
+      <option value="">All</option>
+      <option value="manual">Manual</option>
+      <option value="claude-code">Claude Code</option>
+      <option value="codex">Codex</option>
+    </select>
+  </label>
+  <label>Category
+    <select id="categoryFilter">
+      <option value="">All</option>
+      <option value="general">General</option>
+      <option value="sales">Sales</option>
+      <option value="ops">Ops</option>
+      <option value="finance">Finance</option>
+      <option value="hr">HR</option>
+      <option value="ai">AI/Tech</option>
+      <option value="mx">Maintenance</option>
+    </select>
+  </label>
+  <label>Status
+    <select id="statusFilter">
+      <option value="">Board statuses</option>
+      <option value="open">Open</option>
+      <option value="urgent">Urgent</option>
+      <option value="waiting">Waiting</option>
+      <option value="someday">Someday</option>
+      <option value="done">Done</option>
+    </select>
+  </label>
+  <label><input type="checkbox" id="showGenerated"> Show generated</label>
+  <button class="reset-filter" onclick="clearFilters()">Reset</button>
+</div>
+
 <div class="columns">
   <div class="column col-urgent">
     <h2><span class="dot"></span>Urgent<span class="count" id="count-urgent">0</span></h2>
@@ -393,6 +514,11 @@
     <h2><span class="dot"></span>Done<span class="count" id="count-done">0</span></h2>
     <div id="list-done"></div>
   </div>
+</div>
+
+<div class="archive-view" id="archive-view">
+  <h2>Archive <span id="count-archive">0</span></h2>
+  <div id="list-archive"></div>
 </div>
 
 <div class="toast-wrap" id="toast-wrap"></div>
@@ -441,6 +567,7 @@ function parseCSVLine(line) {
 
 // ========== DATA LAYER ==========
 let cachedTasks = [];
+let boardView = 'board';
 
 function showToast(message, kind = 'info') {
   const wrap = document.getElementById('toast-wrap');
@@ -456,29 +583,90 @@ function showToast(message, kind = 'info') {
   }, 2400);
 }
 
-async function fetchTasksFromSheet() {
+function dateValue(value, fallback = null) {
+  if (value === null || value === undefined || value === '') return fallback;
+  if (typeof value === 'number') return value;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? fallback : parsed;
+}
+
+function normalizeTask(row) {
+  return {
+    id: String(row.id || ''),
+    text: row.text || '',
+    category: row.category || 'general',
+    status: row.status || 'open',
+    source: row.source || 'manual',
+    session_id: row.session_id || '',
+    created: dateValue(row.created_at || row.created, Date.now()),
+    completedAt: dateValue(row.completed_at || row.completedAt),
+    archivedAt: dateValue(row.archived_at || row.archivedAt),
+    repo: row.repo || '',
+    acceptance_criteria: row.acceptance_criteria || '',
+    agent_type: row.agent_type || '',
+    agent_run_id: row.agent_run_id || '',
+    branch: row.branch || '',
+    pr_url: row.pr_url || '',
+    last_agent_update: row.last_agent_update || '',
+    review_owner: row.review_owner || '',
+  };
+}
+
+function currentFilters() {
+  return {
+    source: document.getElementById('sourceFilter')?.value || '',
+    category: document.getElementById('categoryFilter')?.value || '',
+    status: document.getElementById('statusFilter')?.value || '',
+    showGenerated: document.getElementById('showGenerated')?.checked || false,
+  };
+}
+
+function buildTaskQuery() {
+  const filters = currentFilters();
+  const params = new URLSearchParams();
+  if (filters.source) params.set('source', filters.source);
+  if (filters.category) params.set('category', filters.category);
+  if (boardView === 'archive') {
+    params.set('status', 'archived');
+    params.set('include_archived', '1');
+  } else {
+    params.set('include_archived', '0');
+    if (filters.status) params.set('status', filters.status);
+    if (!filters.showGenerated) params.set('hide_generated', '1');
+  }
+  params.set('_t', Date.now().toString());
+  return params.toString();
+}
+
+async function fetchTasks() {
   try {
-    const res = await fetch(TASKS_CSV + '&_t=' + Date.now()); // cache-bust
-    if (!res.ok) throw new Error('Fetch failed');
-    const csv = await res.text();
-    const rows = parseCSV(csv);
-    cachedTasks = rows.map(r => ({
-      id: r.id || '',
-      text: r.text || '',
-      category: r.category || 'general',
-      status: r.status || 'open',
-      source: r.source || 'manual',
-      session_id: r.session_id || '',
-      created: r.created_at ? new Date(r.created_at).getTime() : Date.now(),
-      completedAt: r.completed_at ? new Date(r.completed_at).getTime() : null,
-    }));
+    const res = await fetch(`${API_URL}/api/tasks?${buildTaskQuery()}`);
+    if (!res.ok) throw new Error('API fetch failed');
+    const data = await res.json();
+    if (data.success === false) throw new Error(data.error || 'API fetch failed');
+    cachedTasks = (data.tasks || []).map(normalizeTask);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedTasks));
-    updateSyncStatus('Synced');
+    updateSyncStatus('Synced from API');
     return cachedTasks;
   } catch (e) {
-    updateSyncStatus('Offline — using cache');
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-    catch { return []; }
+    return fetchTasksFromSheet();
+  }
+}
+
+async function fetchTasksFromSheet() {
+  try {
+    const res = await fetch(TASKS_CSV + '&_t=' + Date.now());
+    if (!res.ok) throw new Error('Fetch failed');
+    const csv = await res.text();
+    cachedTasks = parseCSV(csv).map(normalizeTask);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedTasks));
+    updateSyncStatus('Synced from Sheet fallback');
+    return cachedTasks;
+  } catch (e) {
+    updateSyncStatus('Offline - using cache');
+    try { cachedTasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch { cachedTasks = []; }
+    return cachedTasks;
   }
 }
 
@@ -502,6 +690,34 @@ function loadTasks() {
   return cachedTasks.length ? cachedTasks : (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'));
 }
 
+function applyClientFilters(tasks) {
+  const filters = currentFilters();
+  return tasks.filter(task => {
+    if (boardView === 'archive' && task.status !== 'archived') return false;
+    if (boardView !== 'archive' && task.status === 'archived') return false;
+    if (!filters.showGenerated && task.source === 'claude-code' && boardView !== 'archive') return false;
+    if (filters.source && task.source !== filters.source) return false;
+    if (filters.category && task.category !== filters.category) return false;
+    if (filters.status && boardView !== 'archive' && task.status !== filters.status) return false;
+    return true;
+  });
+}
+
+function setBoardView(view) {
+  boardView = view;
+  document.getElementById('view-board').classList.toggle('active', view === 'board');
+  document.getElementById('view-archive').classList.toggle('active', view === 'archive');
+  poll();
+}
+
+function clearFilters() {
+  document.getElementById('sourceFilter').value = '';
+  document.getElementById('categoryFilter').value = '';
+  document.getElementById('statusFilter').value = '';
+  document.getElementById('showGenerated').checked = false;
+  poll();
+}
+
 // ========== WRITE VIA CLOUD RUN API ==========
 async function writeToSheet(action, data) {
   if (!API_URL) return false;
@@ -520,7 +736,7 @@ async function writeToSheet(action, data) {
     if (action === 'complete') showToast('Task marked complete', 'success');
     else if (action === 'reopen') showToast('Task reopened', 'info');
     else if (action === 'urgent') showToast('Task priority updated', 'info');
-    else if (action === 'delete') showToast('Task deleted', 'success');
+    else if (action === 'delete') showToast('Task archived', 'success');
     setTimeout(() => poll(), 1000);
     return result.success;
   } catch(e) {
@@ -555,11 +771,12 @@ async function addTask() {
 
   // Write to sheet via API
   try {
-    await fetch(API_URL + '/add', {
+    const resp = await fetch(API_URL + '/api/tasks', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(task),
     });
+    if (!resp.ok) throw new Error('Add failed');
     showToast('Task added', 'success');
     setTimeout(() => poll(), 1000);
   } catch(e) {
@@ -588,35 +805,97 @@ async function toggleUrgent(id) {
   await writeToSheet('urgent', { id: String(id) });
 }
 
-async function deleteTask(id) {
-  cachedTasks = cachedTasks.filter(t => String(t.id) !== String(id));
+async function archiveTask(id) {
+  const t = cachedTasks.find(t => String(t.id) === String(id));
+  if (t) {
+    t.status = 'archived';
+    t.archivedAt = Date.now();
+  } else {
+    cachedTasks = cachedTasks.filter(t => String(t.id) !== String(id));
+  }
   localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedTasks));
   render();
   await writeToSheet('delete', { id: String(id) });
 }
 
+async function reopenTask(id) {
+  const t = cachedTasks.find(t => String(t.id) === String(id));
+  if (!t) return;
+  t.status = 'open';
+  t.completedAt = null;
+  t.archivedAt = null;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(cachedTasks));
+  render();
+  await writeToSheet('reopen', { id: String(id) });
+}
+
+async function sendToAgent(id) {
+  const task = cachedTasks.find(t => String(t.id) === String(id));
+  if (!task) return;
+  const acceptance = prompt('Acceptance criteria for Codex worker:', task.acceptance_criteria || task.text);
+  if (acceptance === null) return;
+  const reviewOwner = prompt('Review owner:', task.review_owner || '');
+  try {
+    const resp = await fetch(`${API_URL}/api/tasks/${encodeURIComponent(id)}/send-to-agent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        repo: task.repo || 'lauren-ship-it-barnhart/jetex-task-board',
+        acceptance_criteria: acceptance,
+        agent_type: 'codex',
+        review_owner: reviewOwner || '',
+      }),
+    });
+    const result = await resp.json();
+    if (!resp.ok || !result.success) throw new Error(result.error || 'Send to agent failed');
+    showToast('Task queued for agent', 'success');
+    poll();
+  } catch (e) {
+    console.error('Send to agent failed:', e);
+    showToast('Send to agent failed', 'error');
+  }
+}
+
 // ========== RENDERING ==========
 function formatDate(ts) {
-  const d = new Date(ts);
+  const d = new Date(ts || Date.now());
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function safeClass(value) {
+  return String(value || 'general').toLowerCase().replace(/[^a-z0-9_-]/g, '-');
 }
 
 function renderTask(task) {
   const isDone = task.status === 'done';
+  const isArchived = task.status === 'archived';
   const eid = escHtml(String(task.id));
+  const categoryClass = safeClass(task.category);
+  const sourceLabel = task.source && task.source !== 'manual'
+    ? `<span class="tag tag-source">${escHtml(task.source)}</span>`
+    : '';
+  const statusLabel = !['open', 'urgent', 'waiting', 'someday'].includes(task.status)
+    ? `<span class="tag tag-status">${escHtml(task.status.replace(/_/g, ' '))}</span>`
+    : '';
+  const prLink = task.pr_url
+    ? `<a class="tag tag-source" href="${escHtml(task.pr_url)}" target="_blank" rel="noopener">PR</a>`
+    : '';
   return `
     <div class="task ${isDone ? 'completed' : ''}">
       <div class="task-top">
         <div class="task-text">${escHtml(task.text)}</div>
         <div class="task-actions">
-          ${!isDone ? `<button class="btn-urgent" onclick="toggleUrgent('${eid}')" title="${task.status === 'urgent' ? 'Set normal' : 'Mark urgent'}">!!</button>` : ''}
-          <button class="btn-done" onclick="toggleDone('${eid}')" title="${isDone ? 'Reopen' : 'Complete'}">${isDone ? '&#8634;' : '&#10003;'}</button>
-          <button class="btn-delete" onclick="deleteTask('${eid}')" title="Delete">&times;</button>
+          ${!isDone && !isArchived ? `<button class="btn-urgent" onclick="toggleUrgent('${eid}')" title="${task.status === 'urgent' ? 'Set normal' : 'Mark urgent'}">!!</button>` : ''}
+          ${!isArchived ? `<button class="btn-agent" onclick="sendToAgent('${eid}')" title="Send to Agent">&#9881;</button>` : ''}
+          <button class="btn-done" onclick="${isArchived ? `reopenTask('${eid}')` : `toggleDone('${eid}')`}" title="${isDone || isArchived ? 'Reopen' : 'Complete'}">${isDone || isArchived ? '&#8634;' : '&#10003;'}</button>
+          ${!isArchived ? `<button class="btn-archive" onclick="archiveTask('${eid}')" title="Archive">&#128230;</button>` : ''}
         </div>
       </div>
       <div class="task-meta">
-        <span class="tag tag-${task.category}">${task.category}</span>
-        ${task.source === 'claude-code' ? '<span class="tag tag-claude">Claude</span>' : ''}
+        <span class="tag tag-${categoryClass}">${escHtml(task.category)}</span>
+        ${sourceLabel}
+        ${statusLabel}
+        ${prLink}
         <span class="tag-date">${formatDate(task.created)}</span>
       </div>
     </div>`;
@@ -629,7 +908,22 @@ function escHtml(s) {
 }
 
 function render() {
-  const tasks = loadTasks();
+  const tasks = applyClientFilters(loadTasks().map(normalizeTask));
+  const columns = document.querySelector('.columns');
+  const archiveView = document.getElementById('archive-view');
+
+  if (boardView === 'archive') {
+    columns.style.display = 'none';
+    archiveView.classList.add('open');
+    document.getElementById('list-archive').innerHTML = tasks.length
+      ? tasks.map(renderTask).join('')
+      : '<div class="empty">No archived tasks</div>';
+    document.getElementById('count-archive').textContent = tasks.length;
+  } else {
+    columns.style.display = '';
+    archiveView.classList.remove('open');
+  }
+
   const urgent = tasks.filter(t => t.status === 'urgent');
   const open = tasks.filter(t => t.status === 'open');
   const waiting = tasks.filter(t => t.status === 'waiting');
@@ -638,11 +932,13 @@ function render() {
   const done = tasks.filter(t => t.status === 'done');
   const doneToday = done.filter(t => t.completedAt && new Date(t.completedAt).toDateString() === today);
 
-  document.getElementById('list-urgent').innerHTML = urgent.length ? urgent.map(renderTask).join('') : '<div class="empty">No urgent tasks</div>';
-  document.getElementById('list-open').innerHTML = open.length ? open.map(renderTask).join('') : '<div class="empty">All clear</div>';
-  document.getElementById('list-waiting').innerHTML = waiting.length ? waiting.map(renderTask).join('') : '<div class="empty">Nothing blocked</div>';
-  document.getElementById('list-someday').innerHTML = someday.length ? someday.map(renderTask).join('') : '<div class="empty">Nothing queued</div>';
-  document.getElementById('list-done').innerHTML = done.length ? done.sort((a,b) => (b.completedAt||0) - (a.completedAt||0)).map(renderTask).join('') : '<div class="empty">Nothing completed yet</div>';
+  if (boardView !== 'archive') {
+    document.getElementById('list-urgent').innerHTML = urgent.length ? urgent.map(renderTask).join('') : '<div class="empty">No urgent tasks</div>';
+    document.getElementById('list-open').innerHTML = open.length ? open.map(renderTask).join('') : '<div class="empty">All clear</div>';
+    document.getElementById('list-waiting').innerHTML = waiting.length ? waiting.map(renderTask).join('') : '<div class="empty">Nothing blocked</div>';
+    document.getElementById('list-someday').innerHTML = someday.length ? someday.map(renderTask).join('') : '<div class="empty">Nothing queued</div>';
+    document.getElementById('list-done').innerHTML = done.length ? done.sort((a,b) => (b.completedAt||0) - (a.completedAt||0)).map(renderTask).join('') : '<div class="empty">Nothing completed yet</div>';
+  }
 
   document.getElementById('stat-urgent').textContent = urgent.length;
   document.getElementById('stat-open').textContent = open.length;
@@ -679,7 +975,7 @@ function updateClock() {
 
 // ========== POLLING LOOP ==========
 async function poll() {
-  await fetchTasksFromSheet();
+  await fetchTasks();
   const sessions = await fetchSessions();
   render();
   renderSessions(sessions);
@@ -688,9 +984,12 @@ async function poll() {
 document.getElementById('taskInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') addTask();
 });
+['sourceFilter', 'categoryFilter', 'statusFilter', 'showGenerated'].forEach(id => {
+  document.getElementById(id).addEventListener('change', poll);
+});
 
 // Initial load from localStorage while first fetch happens
-cachedTasks = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+cachedTasks = (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]')).map(normalizeTask);
 render();
 updateClock();
 

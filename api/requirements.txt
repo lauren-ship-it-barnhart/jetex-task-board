@@ -4,3 +4,4 @@ google-api-python-client==2.114.0
 google-auth==2.27.0
 google-cloud-bigquery==3.17.2
 gunicorn==21.2.0
+psycopg[binary]==3.1.18
