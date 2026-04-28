@@ -5,11 +5,13 @@ import os
 import shlex
 import subprocess
 import sys
+import tempfile
 
 from task_store import PostgresTaskStore
 
 
 DEFAULT_REPO = "lauren-ship-it-barnhart/jetex-task-board"
+SENSITIVE_ENV_NAMES = {"GITHUB_TOKEN", "OPENAI_API_KEY"}
 
 
 def env_required(name: str) -> str:
@@ -19,7 +21,12 @@ def env_required(name: str) -> str:
     return value
 
 
-def run(command: list[str] | str, cwd: str | None = None, extra_env: dict[str, str] | None = None) -> str:
+def run(
+    command: list[str] | str,
+    cwd: str | None = None,
+    extra_env: dict[str, str] | None = None,
+    input_text: str | None = None,
+) -> str:
     shell = isinstance(command, str)
     completed = subprocess.run(
         command,
@@ -28,9 +35,18 @@ def run(command: list[str] | str, cwd: str | None = None, extra_env: dict[str, s
         check=True,
         capture_output=True,
         text=True,
+        input=input_text,
         env={**os.environ, **(extra_env or {})},
     )
     return (completed.stdout + completed.stderr).strip()
+
+
+def redact(value: str) -> str:
+    for name in SENSITIVE_ENV_NAMES:
+        secret = os.environ.get(name)
+        if secret:
+            value = value.replace(secret, "[redacted]")
+    return value
 
 
 def task_prompt(task: dict) -> str:
@@ -78,14 +94,59 @@ def create_draft_pr(repo_dir: str, branch: str, task: dict) -> str:
     return output.strip()
 
 
+def validate_runtime() -> None:
+    run(["git", "--version"])
+    run(["gh", "--version"])
+    run(["bash", "--version"])
+    run(["rg", "--version"])
+    run(["codex", "--version"])
+
+
+def clone_repo(repo: str, branch: str, base_ref: str, github_token: str) -> str:
+    repo_dir = tempfile.mkdtemp(prefix="codex-worker-")
+    clone_url = f"https://x-access-token:{github_token}@github.com/{repo}.git"
+    run(["git", "clone", "--origin", "origin", clone_url, repo_dir])
+    run(["git", "config", "user.email", os.environ.get("GIT_AUTHOR_EMAIL", "codex-worker@jetexcellence.com")], cwd=repo_dir)
+    run(["git", "config", "user.name", os.environ.get("GIT_AUTHOR_NAME", "JetEx Codex Worker")], cwd=repo_dir)
+    run(["git", "fetch", "origin"], cwd=repo_dir)
+    run(["git", "checkout", "-B", branch, base_ref], cwd=repo_dir)
+    return repo_dir
+
+
+def run_codex(repo_dir: str, prompt: str) -> str:
+    codex_command = os.environ.get("CODEX_COMMAND")
+    env = {
+        "CODEX_TASK_PROMPT": prompt,
+        "CODEX_HOME": os.environ.get("CODEX_HOME", "/tmp/codex"),
+    }
+    if codex_command:
+        return run(codex_command, cwd=repo_dir, extra_env=env)
+    return run(
+        [
+            "codex",
+            "exec",
+            "--full-auto",
+            "--sandbox",
+            "workspace-write",
+            "-C",
+            repo_dir,
+            "-",
+        ],
+        cwd=repo_dir,
+        extra_env=env,
+        input_text=prompt,
+    )
+
+
 def main() -> int:
     store = PostgresTaskStore(env_required("DATABASE_URL"))
     repo = os.environ.get("WORKER_REPO", DEFAULT_REPO)
-    repo_dir = env_required("WORKER_REPO_DIR")
+    github_token = env_required("GITHUB_TOKEN")
     base_ref = os.environ.get("WORKER_BASE_REF", "origin/main")
-    codex_command = env_required("CODEX_COMMAND")
     check_command = os.environ.get("CHECK_COMMAND", "")
     worker_label = os.environ.get("WORKER_LABEL", "codex-worker")
+
+    validate_runtime()
 
     task = store.claim_ready_task(repo=repo, agent_type="codex", worker_label=worker_label)
     if not task:
@@ -97,9 +158,8 @@ def main() -> int:
     prompt = task_prompt(task)
 
     try:
-        run(["git", "fetch", "origin"], cwd=repo_dir)
-        run(["git", "checkout", "-B", branch, base_ref], cwd=repo_dir)
-        run(codex_command, cwd=repo_dir, extra_env={"CODEX_TASK_PROMPT": prompt})
+        repo_dir = clone_repo(repo, branch, base_ref, github_token)
+        run_codex(repo_dir, prompt)
         if check_command:
             run(check_command, cwd=repo_dir)
         status = run(["git", "status", "--short"], cwd=repo_dir)
@@ -120,7 +180,7 @@ def main() -> int:
     except subprocess.CalledProcessError as exc:
         command = exc.cmd if isinstance(exc.cmd, str) else " ".join(shlex.quote(part) for part in exc.cmd)
         detail = (exc.stdout or "") + (exc.stderr or "")
-        reason = f"Command failed: {command}\n{detail[-3000:]}"
+        reason = redact(f"Command failed: {command}\n{detail[-3000:]}")
         store.update_agent_run(run_id, {
             "status": "blocked",
             "failure_reason": reason,
